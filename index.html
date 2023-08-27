@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interview List Converter</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='1em' font-size='100'>📝</text></svg>">
+</head>
+
+<body>
+    <div class="container">
+        <h2>Interview List Converter</h2>
+        <p>Enter names depending on the input source, then click 'Convert'. Once converted, you can choose to copy individual names or all names to your clipboard.
+            <br><br>
+            <i>Everything happens in your browser. No names or files are ever uploaded.</i>
+        </p>
+
+        <div>
+            <h3>Outlook Invites</h3>
+            <p>Go to invite -> Terminplanungs-Assistent / Scheduling assistant -> Mark all + copy -> insert here</p>
+            <input type="text" id="inputString" placeholder="Enter names separated by ';' Format last name, first name expected">
+            <button id="convertInputBtn">Convert</button>
+        </div>
+
+        <div>
+            <h3>MS Teams Attendance List</h3>
+            <p>People -> Participants -> Three Dots "..."" -> Download Attendance List -> first row in csv after opening in Excel</p>
+            <textarea id="inputTextarea" rows="4" cols="50" placeholder="Enter names, one per line; Format last name, first name expected"></textarea>
+            <button id="convertTextareaBtn">Convert</button>
+            <label class="file-upload">
+                Upload CSV
+                <input type="file" id="csvFile" accept=".csv" onchange="handleFile()" style="display: none;">
+            </label>
+        </div>
+
+        <div>
+            <button onclick="copySelected()">Copy Selected</button>
+            <button id="copyAllButton" onclick="copyAll()">Copy All</button>
+        </div>
+
+        <ul id="resultList"></ul>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
