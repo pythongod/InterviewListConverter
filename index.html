@@ -30,7 +30,6 @@
             <p>People -> Participants -> Three Dots "..."" -> Download Attendance List -> first row in csv after opening in Excel</p>
             <textarea id="inputTextarea" rows="4" cols="50" placeholder="Enter names, one per line; Format last name, first name expected"></textarea>
             <button id="convertTextareaBtn">Convert</button>
-            <button id="filterZugesagtBtn">Filter Zugesagt</button>
             <label class="file-upload">
                 Upload CSV
                 <input type="file" id="csvFile" accept=".csv" onchange="handleFile()" style="display: none;">
@@ -40,6 +39,12 @@
         <div>
             <button onclick="copySelected()">Copy Selected</button>
             <button id="copyAllButton" onclick="copyAll()">Copy All</button>
+        </div>
+        <div>
+            <h3>Zugesagt Filter</h3>
+            <p>Paste your TSV data here to filter names with the response 'Zugesagt'</p>
+            <textarea id="inputZugesagtData" rows="6" cols="50" placeholder="Paste TSV data here"></textarea>
+            <button id="filterZugesagtBtn">Filter Zugesagt</button>
         </div>
 
         <ul id="resultList"></ul>
