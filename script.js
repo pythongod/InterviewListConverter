@@ -173,4 +173,5 @@ document.addEventListener("DOMContentLoaded", function() {
     document.getElementById("filterZugesagtBtn").addEventListener("click", function() {
     const inputData = document.getElementById("inputZugesagtData").value; // Corrected ID
     filterAndDisplayZugesagt(inputData);
+    });
 });
