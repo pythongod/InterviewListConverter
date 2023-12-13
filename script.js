@@ -171,7 +171,7 @@ document.addEventListener("DOMContentLoaded", function() {
     document.getElementById("csvFile").addEventListener("change", handleFile);
 
     document.getElementById("filterZugesagtBtn").addEventListener("click", function() {
-    const inputData = document.getElementById("convertTextareaToList").value;
+    const inputData = document.getElementById("convertTextareaBtn").value;
     filterAndDisplayZugesagt(inputData);
 });
 });
