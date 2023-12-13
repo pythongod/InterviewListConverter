@@ -164,7 +164,7 @@ function filterAndDisplayVorbehalt(data) {
         const cells = rows[i].split('\t');
 
         // Check if the response is 'Zugesagt' and add to the list
-        if (cells[2] && cells[2].trim() === 'Zugesagt') {
+        if (cells[2] && cells[2].trim() === 'Mit Vorbehalt') {
             let name = cells[0].trim();
             if (name.includes(",")) {
                 const splitName = name.split(",").map(n => n.trim());
