@@ -133,6 +133,32 @@ function toggleCopyAll() {
     }
 }
 
+function filterAndDisplayZugesagt(data) {
+    const rows = data.split('\n');
+    let namesZugesagt = [];
+
+    // Starting from index 1 to skip the header row
+    for (let i = 1; i < rows.length; i++) {
+        const cells = rows[i].split('\t');
+
+        // Check if the response is 'Zugesagt' and add to the list
+        if (cells[2] && cells[2].trim() === 'Zugesagt') {
+            let name = cells[0].trim();
+            if (name.includes(",")) {
+                const splitName = name.split(",").map(n => n.trim());
+                name = splitName[1] + " " + splitName[0]; // Flipping the name
+            }
+            namesZugesagt.push(name);
+        }
+    }
+
+    displayNames(namesZugesagt);
+}
+
+// Example usage:
+// filterAndDisplayZugesagt(inputData); // Where inputData is your TSV string
+
+
 // Wait for the DOM to be fully loaded
 document.addEventListener("DOMContentLoaded", function() {
     // Attaching the event listener to 'convertInputBtn' button
