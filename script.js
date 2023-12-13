@@ -169,4 +169,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Event listener for file upload
     document.getElementById("csvFile").addEventListener("change", handleFile);
+
+    document.getElementById("filterZugesagtBtn").addEventListener("click", function() {
+    const inputData = document.getElementById("yourInputFieldId").value;
+    filterAndDisplayZugesagt(inputData);
+});
 });
