@@ -22,7 +22,7 @@
             <p>Go to invite -> Terminplanungs-Assistent / Scheduling assistant -> Mark all + copy -> insert here</p>
             <input type="text" id="inputString" placeholder="Enter names separated by ';' Format last name, first name expected">
             <button id="convertInputBtn">Convert</button>
-            <button id="filterZugesagtBtn">Filter Zugesagt</button>
+            
         </div>
 
         <div>
@@ -30,6 +30,7 @@
             <p>People -> Participants -> Three Dots "..."" -> Download Attendance List -> first row in csv after opening in Excel</p>
             <textarea id="inputTextarea" rows="4" cols="50" placeholder="Enter names, one per line; Format last name, first name expected"></textarea>
             <button id="convertTextareaBtn">Convert</button>
+            <button id="filterZugesagtBtn">Filter Zugesagt</button>
             <label class="file-upload">
                 Upload CSV
                 <input type="file" id="csvFile" accept=".csv" onchange="handleFile()" style="display: none;">
