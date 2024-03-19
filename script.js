@@ -76,6 +76,7 @@ function copyAll() {
 
     if (namesToCopy.length > 0) {
         copyToClipboard(namesToCopy.join("\n"));
+        showCopyNotification(); // Show notification
     } else {
         showCopyNotification("No names to copy!"); // Optionally show a message if there's nothing to copy
     }
