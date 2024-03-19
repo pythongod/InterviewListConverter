@@ -177,6 +177,11 @@ function filterAndDisplayVorbehalt(data) {
     displayNames(namesZugesagt);
 }
 
+function toggleSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    section.classList.toggle("show");
+}
+
 // Example usage:
 // filterAndDisplayZugesagt(inputData); // Where inputData is your TSV string
 
