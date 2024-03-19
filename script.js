@@ -286,4 +286,12 @@ document.addEventListener("DOMContentLoaded", function() {
     const inputData = document.getElementById("inputZugesagtData").value; // Corrected ID
     filterAndDisplayVorbehalt(inputData);
     });
+    document.getElementById("filterDeclineBtn").addEventListener("click", function() {
+    const inputData = document.getElementById("inputZugesagtData").value; // Corrected ID
+    filterAndDisplayVorbehalt(inputData);
+    }); 
+    document.getElementById("filterAllBtn").addEventListener("click", function() {
+    const inputData = document.getElementById("inputZugesagtData").value; // Corrected ID
+    filterAndDisplayVorbehalt(inputData);
+    });    
 });
