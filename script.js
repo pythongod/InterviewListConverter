@@ -18,7 +18,7 @@ function showCopyNotification() {
     setTimeout(() => {
         notification.style.opacity = '0';
         notification.style.visibility = 'hidden';
-        notification.style.display = none; // Ensure it hides again
+        notification.style.display = 'none'; // Ensure it hides again
         }, 
         2000); // 2000 milliseconds = 2 seconds
     }
