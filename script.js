@@ -260,8 +260,10 @@ function toggleSection(sectionId) {
 }
 
 function capitalize(str) {
-//    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-    return str.charAt(0).toUpperCase() + str.slice(1);
+    // Split the string into words if there's a space or dot followed by a character
+    return str.split(/(?<=\.)\s*|\s+/).map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    ).join(' ');
 }
 
 
