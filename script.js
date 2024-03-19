@@ -9,8 +9,9 @@ function copyToClipboard(text) {
     });
 }
 
-function showCopyNotification() {
+function showCopyNotification(message) {
     const notification = document.getElementById('copyNotification');
+    notification.textContent = message; // Set the notification message
     notification.style.opacity = '1';
     notification.style.visibility = 'visible';
     
@@ -19,6 +20,7 @@ function showCopyNotification() {
         notification.style.visibility = 'hidden';
     }, 2000); // Hide the notification after 2 seconds
 }
+
 
 
 
