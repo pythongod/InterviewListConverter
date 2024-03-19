@@ -179,8 +179,18 @@ function filterAndDisplayVorbehalt(data) {
 
 function toggleSection(sectionId) {
     const section = document.getElementById(sectionId);
+    const icon = document.getElementById('icon-' + sectionId);
     section.classList.toggle("show");
+
+    if (section.classList.contains("show")) {
+        icon.classList.remove("fa-chevron-down");
+        icon.classList.add("fa-chevron-up");
+    } else {
+        icon.classList.remove("fa-chevron-up");
+        icon.classList.add("fa-chevron-down");
+    }
 }
+
 
 // Example usage:
 // filterAndDisplayZugesagt(inputData); // Where inputData is your TSV string
