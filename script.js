@@ -224,7 +224,7 @@ function filterAndDisplayAll(data) {
         const cells = rows[i].split('\t');
 
         // Check if the response is 'Abgesagt' and add to the list
-        if (cells[2] && cells[2].trim() === 'Abgesagt') {
+        if (cells[2] && cells[2].trim() === 'Keine') {
             let name = cells[0].trim();
             if (name.includes(",")) {
                 const splitName = name.split(",").map(n => n.trim());
@@ -295,11 +295,11 @@ document.addEventListener("DOMContentLoaded", function() {
     filterAndDisplayVorbehalt(inputData);
     });
     document.getElementById("filterDeclineBtn").addEventListener("click", function() {
-    const inputData = document.getElementById("inputZugesagtData").value; // Corrected ID
-    filterAndDisplayVorbehalt(inputData);
-    }); 
+        const inputData = document.getElementById("inputZugesagtData").value;
+        filterAndDisplayDecline(inputData);
+    });  
     document.getElementById("filterAllBtn").addEventListener("click", function() {
-    const inputData = document.getElementById("inputZugesagtData").value; // Corrected ID
-    filterAndDisplayVorbehalt(inputData);
-    });    
+        const inputData = document.getElementById("inputZugesagtData").value;
+        filterAndDisplayAll(inputData);
+    }); 
 });
