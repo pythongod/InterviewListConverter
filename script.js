@@ -125,6 +125,7 @@ function displayNames(names) {
             }
         });
     });
+}
 
 function toggleCopyAll() {
     const checkboxes = document.querySelectorAll(".nameCheckbox");
