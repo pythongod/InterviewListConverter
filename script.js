@@ -284,7 +284,7 @@ function filterAndDisplayAll(data) {
         const cells = rows[i].split('\t');
 
         // Check if the response is 'Abgesagt' and add to the list
-        if (cells[2] && cells[2].trim() === 'Keine') {
+        if (true) {
             let name = cells[0].trim();
             if (name.includes(",")) {
                 const splitName = name.split(",").map(n => n.trim());
@@ -358,7 +358,7 @@ document.addEventListener("DOMContentLoaded", function() {
     });
     document.getElementById("filterNoResponseBtn").addEventListener("click", function() {
         const inputData = document.getElementById("inputZugesagtData").value;
-        filterAndDisplayAll(inputData);
+        filterAndDisplayNoResponse(inputData);
     }); 
     document.getElementById("filterAllBtn").addEventListener("click", function() {
         const inputData = document.getElementById("inputZugesagtData").value;
