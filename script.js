@@ -14,7 +14,7 @@ function convertToList() {
             let [lastName, firstName] = name.split(",").map(n => n.trim());
             return `${firstName} ${lastName}`;
         }
-        return name.trim();
+        return capitalize(name.trim());
     });
 
     displayNames(names);
@@ -247,6 +247,10 @@ function toggleSection(sectionId) {
     } else {
         icon.classList.replace("fa-chevron-up", "fa-chevron-down");
     }
+}
+
+function capitalize(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
 
 
