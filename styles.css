@@ -110,6 +110,43 @@ p {
     margin-bottom: 20px;
     color: #666;
 }
+
+.toggle-button {
+    padding: 10px 15px;
+    background-color: #4CAF50; /* A fresh green */
+    color: white;
+    border: none;
+    text-align: left;
+    outline: none;
+    font-size: 15px;
+    transition: 0.4s;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 5px; /* Adds some space below the button */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.toggle-button::after {
+    content: '\002B'; /* Unicode plus sign */
+    color: white;
+    font-weight: bold;
+    transition: transform 0.4s;
+}
+
+.content.show + .toggle-button::after {
+    transform: rotate(45deg); /* Change icon to 'x' when expanded */
+}
+
+.toggle-button:hover {
+    background-color: #45a049;
+}
+
+
+
+
 .file-upload {
     display: inline-block;
     padding: 8px 15px;
