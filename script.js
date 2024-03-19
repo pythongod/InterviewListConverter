@@ -178,16 +178,15 @@ function filterAndDisplayVorbehalt(data) {
 }
 
 function toggleSection(sectionId) {
-    const section = document.getElementById(sectionId);
-    const icon = document.getElementById('icon-' + sectionId);
+    var section = document.getElementById(sectionId);
+    var iconId = 'icon-' + sectionId;
+    var icon = document.getElementById(iconId);
     section.classList.toggle("show");
 
     if (section.classList.contains("show")) {
-        icon.classList.remove("fa-chevron-down");
-        icon.classList.add("fa-chevron-up");
+        icon.classList.replace("fa-chevron-down", "fa-chevron-up");
     } else {
-        icon.classList.remove("fa-chevron-up");
-        icon.classList.add("fa-chevron-down");
+        icon.classList.replace("fa-chevron-up", "fa-chevron-down");
     }
 }
 
