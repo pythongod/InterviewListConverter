@@ -208,7 +208,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Add event listeners for each icon
     document.getElementById("icon-outlookInvites").addEventListener("click", function() {
-        toggleSection('outlookInvites');
+        toggleSection('content-outlook');
     });
     document.getElementById("icon-ms-teams-attendance-list").addEventListener("click", function() {
         toggleSection('ms-teams-attendance-list');
