@@ -28,22 +28,26 @@
         </div>
 
         <div class="section">
-                <h3>MS Teams Attendance List<i class="fas fa-chevron-down" id="icon-ms-teams-attendance-list"></i></h3>
-                <p>People -> Participants -> Three Dots "..."" -> Download Attendance List -> first row in csv after opening in Excel</p>
-                <textarea id="inputTextarea" rows="4" cols="50" placeholder="Enter names, one per line; Format last name, first name expected"></textarea>
-                <button id="convertTextareaBtn">Convert</button>
-                <label class="file-upload">
-                    Upload CSV
-                    <input type="file" id="csvFile" accept=".csv" onchange="handleFile()" style="display: none;">
-                </label>
+                <h3 onclick="toggleSection('content-attendance-list')">MS Teams Attendance List<i class="fas fa-chevron-down" id="icon-ms-teams-attendance-list"></i></h3>
+                <div id="content-outlook" class="content">
+                    <p>People -> Participants -> Three Dots "..."" -> Download Attendance List -> first row in csv after opening in Excel</p>
+                    <textarea id="inputTextarea" rows="4" cols="50" placeholder="Enter names, one per line; Format last name, first name expected"></textarea>
+                    <button id="convertTextareaBtn">Convert</button>
+                    <label class="file-upload">
+                        Upload CSV
+                        <input type="file" id="csvFile" accept=".csv" onchange="handleFile()" style="display: none;">
+                    </label>
+                </div>
         </div>
         
         <div class="section">
-                <h3>Zugesagt Filter<i class="fas fa-chevron-down" id="icon-zugesagtFilter"></i></h3>
-                <p>Paste your TSV data here to filter names with the response 'Zugesagt'</p>
-                <textarea id="inputZugesagtData" rows="6" cols="50" placeholder="Paste TSV data here"></textarea>
-                <button id="filterZugesagtBtn">Filter Zugesagt</button>
-                <button id="filterVorbehaltBtn">Filter Mit Vorbehalt</button>
+                <h3 onclick="toggleSection('content-zugesagtFilter')">Zugesagt Filter<i class="fas fa-chevron-down" id="icon-zugesagtFilter"></i></h3>
+                <div id="content-outlook" class="content">
+                    <p>Paste your TSV data here to filter names with the response 'Zugesagt'</p>
+                    <textarea id="inputZugesagtData" rows="6" cols="50" placeholder="Paste TSV data here"></textarea>
+                    <button id="filterZugesagtBtn">Filter Zugesagt</button>
+                    <button id="filterVorbehaltBtn">Filter Mit Vorbehalt</button>
+            </div>
         </div>
         
         <div>
