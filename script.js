@@ -1,5 +1,13 @@
 // Function Definitions
 
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        console.log('Text copied to clipboard');
+    }).catch(err => {
+        console.error('Failed to copy text: ', err);
+    });
+}
+
 function convertToList() {
     const input = document.getElementById("inputString").value.trim();
     let names = input.split(";").filter(name => name && name.trim() !== '');
