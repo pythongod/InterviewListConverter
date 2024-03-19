@@ -206,6 +206,19 @@ document.addEventListener("DOMContentLoaded", function() {
     // Event listener for file upload
     document.getElementById("csvFile").addEventListener("change", handleFile);
 
+    // Add event listeners for each icon
+    document.getElementById("icon-outlookInvites").addEventListener("click", function() {
+        toggleSection('outlookInvites');
+    });
+    document.getElementById("icon-ms-teams-attendance-list").addEventListener("click", function() {
+        toggleSection('ms-teams-attendance-list');
+    });
+    document.getElementById("icon-zugesagtFilter").addEventListener("click", function() {
+        toggleSection('zugesagtFilter');
+    });
+
+    
+
     document.getElementById("filterZugesagtBtn").addEventListener("click", function() {
     const inputData = document.getElementById("inputZugesagtData").value; // Corrected ID
     filterAndDisplayZugesagt(inputData);
