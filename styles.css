@@ -96,6 +96,16 @@ h2, h3 {
     color: #444;
 }
 
+.content {
+    overflow: hidden;
+    transition: max-height 0.2s ease-out;
+    max-height: 0;
+}
+
+.content.show {
+    max-height: 1000px; /* Adjust as necessary */
+}
+
 p {
     margin-bottom: 20px;
     color: #666;
