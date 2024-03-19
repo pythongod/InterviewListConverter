@@ -4,16 +4,17 @@ function convertToList() {
     const input = document.getElementById("inputString").value.trim();
     let names = input.split(";").filter(name => name && name.trim() !== '');
 
-    // Process each name to remove email addresses and dots
+    // Process each name to remove email addresses, dots, and capitalize first letters
     names = names.map(name => {
         // Remove any email address and dots from the name
         name = name.split('@')[0].replace(/\./g, ' ');
 
-        // Flip last and first names if there's a comma
+        // Split and capitalize each part of the name if there's a comma
         if (name.includes(",")) {
-            let [lastName, firstName] = name.split(",").map(n => n.trim());
+            let [lastName, firstName] = name.split(",").map(n => n.trim()).map(part => capitalize(part));
             return `${firstName} ${lastName}`;
         }
+        // Capitalize names that don't have a comma
         return capitalize(name.trim());
     });
 
@@ -250,7 +251,10 @@ function toggleSection(sectionId) {
 }
 
 function capitalize(str) {
-    return str.charAt(0).toUpperCase() + str.slice(1).toUpperCase();
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
+
 }
 
 
