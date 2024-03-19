@@ -253,6 +253,28 @@ function filterAndDisplayDecline(data) {
     displayNames(namesZugesagt);
 }
 
+function filterAndDisplayNoResponse(data) {
+    const rows = data.split('\n');
+    let namesZugesagt = [];
+
+    // Starting from index 1 to skip the header row
+    for (let i = 1; i < rows.length; i++) {
+        const cells = rows[i].split('\t');
+
+        // Check if the response is 'Abgesagt' and add to the list
+        if (cells[2] && cells[2].trim() === 'Keine') {
+            let name = cells[0].trim();
+            if (name.includes(",")) {
+                const splitName = name.split(",").map(n => n.trim());
+                name = splitName[1] + " " + splitName[0]; // Flipping the name
+            }
+            namesZugesagt.push(name);
+        }
+    }
+
+    displayNames(namesZugesagt);
+}
+
 function filterAndDisplayAll(data) {
     const rows = data.split('\n');
     let namesZugesagt = [];
@@ -333,7 +355,11 @@ document.addEventListener("DOMContentLoaded", function() {
     document.getElementById("filterDeclineBtn").addEventListener("click", function() {
         const inputData = document.getElementById("inputZugesagtData").value;
         filterAndDisplayDecline(inputData);
-    });  
+    });
+    document.getElementById("filterNoResponseBtn").addEventListener("click", function() {
+        const inputData = document.getElementById("inputZugesagtData").value;
+        filterAndDisplayAll(inputData);
+    }); 
     document.getElementById("filterAllBtn").addEventListener("click", function() {
         const inputData = document.getElementById("inputZugesagtData").value;
         filterAndDisplayAll(inputData);
