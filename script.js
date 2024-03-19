@@ -11,17 +11,15 @@ function copyToClipboard(text) {
 
 function showCopyNotification() {
     const notification = document.getElementById('copyNotification');
-    notification.style.display = 'block';
     notification.style.opacity = '1';
     notification.style.visibility = 'visible';
-
+    
     setTimeout(() => {
         notification.style.opacity = '0';
         notification.style.visibility = 'hidden';
-        notification.style.display = 'none'; // Ensure it hides again
-        }, 
-        2000); // 2000 milliseconds = 2 seconds
-    }
+    }, 2000); // Hide the notification after 2 seconds
+}
+
 
 
 function convertToList() {
