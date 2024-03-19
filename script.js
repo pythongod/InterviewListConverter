@@ -285,6 +285,7 @@ document.addEventListener("DOMContentLoaded", function() {
     document.getElementById("icon-outlookInvites").addEventListener("click", function() {
         toggleSection('content-outlook');
     });
+    
     document.getElementById("icon-ms-teams-attendance-list").addEventListener("click", function() {
         toggleSection('content-attendance-list');
     });
