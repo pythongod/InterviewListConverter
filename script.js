@@ -192,6 +192,50 @@ function filterAndDisplayVorbehalt(data) {
     displayNames(namesZugesagt);
 }
 
+function filterAndDisplayDecline(data) {
+    const rows = data.split('\n');
+    let namesZugesagt = [];
+
+    // Starting from index 1 to skip the header row
+    for (let i = 1; i < rows.length; i++) {
+        const cells = rows[i].split('\t');
+
+        // Check if the response is 'Abgesagt' and add to the list
+        if (cells[2] && cells[2].trim() === 'Abgesagt') {
+            let name = cells[0].trim();
+            if (name.includes(",")) {
+                const splitName = name.split(",").map(n => n.trim());
+                name = splitName[1] + " " + splitName[0]; // Flipping the name
+            }
+            namesZugesagt.push(name);
+        }
+    }
+
+    displayNames(namesZugesagt);
+}
+
+function filterAndDisplayAll(data) {
+    const rows = data.split('\n');
+    let namesZugesagt = [];
+
+    // Starting from index 1 to skip the header row
+    for (let i = 1; i < rows.length; i++) {
+        const cells = rows[i].split('\t');
+
+        // Check if the response is 'Abgesagt' and add to the list
+        if (cells[2] && cells[2].trim() === 'Abgesagt') {
+            let name = cells[0].trim();
+            if (name.includes(",")) {
+                const splitName = name.split(",").map(n => n.trim());
+                name = splitName[1] + " " + splitName[0]; // Flipping the name
+            }
+            namesZugesagt.push(name);
+        }
+    }
+
+    displayNames(namesZugesagt);
+}
+
 function toggleSection(sectionId) {
     var section = document.getElementById(sectionId);
     var iconId = 'icon-' + sectionId;
