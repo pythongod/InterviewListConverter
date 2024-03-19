@@ -263,9 +263,6 @@ function capitalize(str) {
 }
 
 
-}
-
-
 // Example usage:
 // filterAndDisplayZugesagt(inputData); // Where inputData is your TSV string
 
