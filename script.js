@@ -3,10 +3,26 @@
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(() => {
         console.log('Text copied to clipboard');
+        showCopyNotification();
     }).catch(err => {
         console.error('Failed to copy text: ', err);
     });
 }
+
+function showCopyNotification() {
+    const notification = document.getElementById('copyNotification');
+    notification.style.display = 'block';
+    notification.style.opacity = '1';
+    notification.style.visibility = 'visible';
+
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.visibility = 'hidden';
+        notification.style.display = none; // Ensure it hides again
+        }, 
+        2000); // 2000 milliseconds = 2 seconds
+    }
+
 
 function convertToList() {
     const input = document.getElementById("inputString").value.trim();
