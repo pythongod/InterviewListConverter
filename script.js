@@ -10,17 +10,22 @@ function copyToClipboard(text) {
     });
 }
 
-function showCopyNotification(message) {
+function showCopyNotification() {
+    console.log('showCopyNotification called'); // This should appear in your browser console when the function is called
     const notification = document.getElementById('copyNotification');
-    notification.textContent = message; // Set the notification message
+    notification.style.display = 'block';
     notification.style.opacity = '1';
     notification.style.visibility = 'visible';
-    
+
     setTimeout(() => {
         notification.style.opacity = '0';
         notification.style.visibility = 'hidden';
-    }, 2000); // Hide the notification after 2 seconds
+        setTimeout(() => {
+            notification.style.display = 'none';
+        }, 500); // Wait for the fade out to finish before hiding
+    }, 2000); // 2000 milliseconds = 2 seconds
 }
+
 
 function convertToList() {
     const input = document.getElementById("inputString").value.trim();
