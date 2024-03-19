@@ -1,11 +1,12 @@
 // Function Definitions
 
+// Your copyToClipboard function should be using the Clipboard API:
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(() => {
-        console.log('Text copied to clipboard');
-        showCopyNotification();
+        showCopyNotification("Copied to clipboard!"); // Show success notification
     }).catch(err => {
         console.error('Failed to copy text: ', err);
+        showCopyNotification("Failed to copy!"); // Show error notification
     });
 }
 
@@ -20,9 +21,6 @@ function showCopyNotification(message) {
         notification.style.visibility = 'hidden';
     }, 2000); // Hide the notification after 2 seconds
 }
-
-
-
 
 function convertToList() {
     const input = document.getElementById("inputString").value.trim();
@@ -50,13 +48,19 @@ function copySelected() {
     const checkboxes = document.querySelectorAll(".nameCheckbox");
     let namesToCopy = [];
 
-    checkboxes.forEach((checkbox, index) => {
+    checkboxes.forEach((checkbox) => {
         if (checkbox.checked) {
             namesToCopy.push(checkbox.nextSibling.textContent);
         }
     });
 
-    copyToClipboard(namesToCopy.join("\n"));
+    const textToCopy = namesToCopy.join("\n");
+    if (textToCopy) {
+        copyToClipboard(textToCopy);
+        showCopyNotification(); // Show notification
+    } else {
+        showCopyNotification("No names selected!"); // Show error message if nothing selected
+    }
 }
 
 function copyAll() {
