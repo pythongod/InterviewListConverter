@@ -14,16 +14,17 @@ function convertToList() {
 
     // Process each name to remove email addresses, dots, and capitalize first letters
     names = names.map(name => {
-        // Remove any email address and dots from the name
-        name = name.split('@')[0].replace(/\./g, ' ');
+        // Remove any email address
+        name = name.split('@')[0];
 
-        // Split and capitalize each part of the name if there's a comma
+        // Flip last and first names if there's a comma and capitalize them
         if (name.includes(",")) {
-            let [lastName, firstName] = name.split(",").map(n => n.trim()).map(part => capitalize(part));
-            return `${firstName} ${lastName}`;
+            let [lastName, firstName] = name.split(",").map(n => n.trim());
+            return capitalize(firstName) + ' ' + capitalize(lastName);
         }
-        // Capitalize names that don't have a comma
-        return capitalize(name.trim());
+
+        // Capitalize names and handle initials properly
+        return capitalize(name);
     });
 
     displayNames(names);
