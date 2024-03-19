@@ -291,16 +291,13 @@ document.addEventListener("DOMContentLoaded", function() {
     document.getElementById("icon-zugesagtFilter").addEventListener("click", function() {
         toggleSection('content-zugesagtFilter');
     });
-
-    
-
     document.getElementById("filterZugesagtBtn").addEventListener("click", function() {
-    const inputData = document.getElementById("inputZugesagtData").value; // Corrected ID
-    filterAndDisplayZugesagt(inputData);
+        const inputData = document.getElementById("inputZugesagtData").value; // Corrected ID
+        filterAndDisplayZugesagt(inputData);
     });
     document.getElementById("filterVorbehaltBtn").addEventListener("click", function() {
-    const inputData = document.getElementById("inputZugesagtData").value; // Corrected ID
-    filterAndDisplayVorbehalt(inputData);
+        const inputData = document.getElementById("inputZugesagtData").value; // Corrected ID
+        filterAndDisplayVorbehalt(inputData);
     });
     document.getElementById("filterDeclineBtn").addEventListener("click", function() {
         const inputData = document.getElementById("inputZugesagtData").value;
