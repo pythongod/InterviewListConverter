@@ -211,10 +211,10 @@ document.addEventListener("DOMContentLoaded", function() {
         toggleSection('content-outlook');
     });
     document.getElementById("icon-ms-teams-attendance-list").addEventListener("click", function() {
-        toggleSection('ms-teams-attendance-list');
+        toggleSection('content-attendance-list');
     });
     document.getElementById("icon-zugesagtFilter").addEventListener("click", function() {
-        toggleSection('zugesagtFilter');
+        toggleSection('content-zugesagtFilter');
     });
 
     
