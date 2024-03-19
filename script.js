@@ -2,7 +2,21 @@
 
 function convertToList() {
     const input = document.getElementById("inputString").value.trim();
-    const names = input.split(";").filter(name => name && name.trim() !== '');
+    let names = input.split(";").filter(name => name && name.trim() !== '');
+
+    // Process each name to remove email addresses and dots
+    names = names.map(name => {
+        // Remove any email address and dots from the name
+        name = name.split('@')[0].replace(/\./g, ' ');
+
+        // Flip last and first names if there's a comma
+        if (name.includes(",")) {
+            let [lastName, firstName] = name.split(",").map(n => n.trim());
+            return `${firstName} ${lastName}`;
+        }
+        return name.trim();
+    });
+
     displayNames(names);
 }
 
@@ -81,23 +95,24 @@ function displayNames(names) {
 
     names.forEach((name, index) => {
         const li = document.createElement("li");
-
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox";
         checkbox.className = "nameCheckbox";
         checkbox.id = "checkbox" + index;
 
-        checkbox.addEventListener('change', toggleCopyAll);
-
         const label = document.createElement("label");
         label.htmlFor = "checkbox" + index;
 
+        // Remove any email address and dots from the name
+        name = name.split('@')[0].replace(/\./g, ' ');
+
+        // Flip last and first names if there's a comma
         if (name.includes(",")) {
-            const splitName = name.split(",").map(n => n.trim());
-            label.textContent = splitName[1] + " " + splitName[0];
-        } else {
-            label.textContent = name.trim();
+            let [lastName, firstName] = name.split(",").map(n => n.trim());
+            name = `${firstName} ${lastName}`;
         }
+
+        label.textContent = name.trim();
 
         li.appendChild(checkbox);
         li.appendChild(label);
@@ -106,11 +121,10 @@ function displayNames(names) {
         li.addEventListener('click', function(event) {
             if (event.target.tagName !== 'INPUT') {
                 checkbox.checked = !checkbox.checked;
+                toggleCopyAll();
             }
-            toggleCopyAll();
         });
     });
-}
 
 function toggleCopyAll() {
     const checkboxes = document.querySelectorAll(".nameCheckbox");
