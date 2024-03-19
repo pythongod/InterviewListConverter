@@ -74,7 +74,15 @@ function copyAll() {
 
     labels.forEach(label => namesToCopy.push(label.textContent));
 
-    copyToClipboard(namesToCopy.join("\n"));
+    // This checks if there are names to copy, and if so, it executes the copy command and shows the notification.
+    if (namesToCopy.length > 0) {
+        copyToClipboard(namesToCopy.join("\n")).then(() => {
+            showCopyNotification("Copied to clipboard!");
+        }).catch(err => {
+            console.error('Failed to copy text: ', err);
+            // Optionally, you could show a different notification for an error.
+        });
+    }
 }
 
 function copyToClipboard(text) {
