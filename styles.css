@@ -96,6 +96,11 @@ h2, h3 {
     color: #444;
 }
 
+h3 i {
+    margin-left: 5px; /* Adjust space between the header text and the icon */
+    cursor: pointer; /* Optional: if you want the icon itself to be clickable */
+}
+
 .content {
     overflow: hidden;
     transition: max-height 0.2s ease-out;
