@@ -133,12 +133,13 @@ function displayNames(names) {
     const resultList = document.getElementById("resultList");
     resultList.innerHTML = "";
 
-    // Sort names by email domain
-    names.sort((a, b) => {
-        const domainA = a.split('@')[1] || '';
-        const domainB = b.split('@')[1] || '';
-        return domainA.localeCompare(domainB);
-    });
+    // Remove duplicates and empty names, then sort by email domain
+    names = [...new Set(names.filter(name => name.trim() !== ''))]
+        .sort((a, b) => {
+            const domainA = a.split('@')[1] || '';
+            const domainB = b.split('@')[1] || '';
+            return domainA.localeCompare(domainB);
+        });
 
     names.forEach((name, index) => {
         const li = document.createElement("li");
