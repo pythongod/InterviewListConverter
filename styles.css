@@ -182,3 +182,9 @@ p {
 .file-upload:hover {
     background-color: #487ab7;
 }
+
+.domain {
+    font-size: 0.8em;
+    color: #888;
+    margin-left: 5px;
+}

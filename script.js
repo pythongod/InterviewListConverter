@@ -55,7 +55,7 @@ function copySelected() {
 
     checkboxes.forEach((checkbox) => {
         if (checkbox.checked) {
-            namesToCopy.push(checkbox.nextSibling.textContent);
+            namesToCopy.push(checkbox.nextSibling.dataset.name);
         }
     });
 
@@ -72,7 +72,7 @@ function copyAll() {
     const labels = document.querySelectorAll("#resultList label");
     let namesToCopy = [];
 
-    labels.forEach(label => namesToCopy.push(label.textContent));
+    labels.forEach(label => namesToCopy.push(label.dataset.name));
 
     if (namesToCopy.length > 0) {
         copyToClipboard(namesToCopy.join("\n"));
@@ -163,7 +163,11 @@ function displayNames(names) {
             name = `${firstName} ${lastName}`;
         }
 
-        label.textContent = name.trim() + (domain ? ` (${domain})` : '');
+        // Store the name without domain in the dataset for copying
+        label.dataset.name = name.trim();
+
+        // Display name with domain in UI
+        label.innerHTML = `${name.trim()} <span class="domain">${domain}</span>`;
 
         li.appendChild(checkbox);
         li.appendChild(label);
@@ -377,3 +381,4 @@ document.addEventListener("DOMContentLoaded", function() {
         filterAndDisplayAll(inputData);
     }); 
 });
+
