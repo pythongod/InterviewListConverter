@@ -133,6 +133,13 @@ function displayNames(names) {
     const resultList = document.getElementById("resultList");
     resultList.innerHTML = "";
 
+    // Sort names by email domain
+    names.sort((a, b) => {
+        const domainA = a.split('@')[1] || '';
+        const domainB = b.split('@')[1] || '';
+        return domainA.localeCompare(domainB);
+    });
+
     names.forEach((name, index) => {
         const li = document.createElement("li");
         const checkbox = document.createElement("input");
@@ -143,8 +150,12 @@ function displayNames(names) {
         const label = document.createElement("label");
         label.htmlFor = "checkbox" + index;
 
+        // Extract email domain (if present)
+        const emailParts = name.split('@');
+        const domain = emailParts.length > 1 ? '@' + emailParts[1] : '';
+
         // Remove any email address and dots from the name
-        name = name.split('@')[0].replace(/\./g, ' ');
+        name = emailParts[0].replace(/\./g, ' ');
 
         // Flip last and first names if there's a comma
         if (name.includes(",")) {
@@ -152,7 +163,7 @@ function displayNames(names) {
             name = `${firstName} ${lastName}`;
         }
 
-        label.textContent = name.trim();
+        label.textContent = name.trim() + (domain ? ` (${domain})` : '');
 
         li.appendChild(checkbox);
         li.appendChild(label);
