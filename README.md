@@ -1,9 +1,9 @@
 # InterviewListConverter
 MS Teams our Outlook Invites to a list
 
+https://app.netlify.com/sites/interviewlist/overview
 
-https://superb-choux-326c84.netlify.app/
 
-https://staging-superb-choux-326c84.netlify.app/
+https://interviewlist.netlify.app/
 
 test git update
