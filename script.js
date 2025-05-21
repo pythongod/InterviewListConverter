@@ -10,9 +10,10 @@ function copyToClipboard(text) {
     });
 }
 
-function showCopyNotification() {
-    console.log('showCopyNotification called'); // This should appear in your browser console when the function is called
+function showCopyNotification(message) {
+    console.log('showCopyNotification called with message:', message);
     const notification = document.getElementById('copyNotification');
+    notification.textContent = message; // Set the message
     notification.style.display = 'block';
     notification.style.opacity = '1';
     notification.style.visibility = 'visible';
@@ -62,7 +63,6 @@ function copySelected() {
     const textToCopy = namesToCopy.join("\n");
     if (textToCopy) {
         copyToClipboard(textToCopy);
-        showCopyNotification(); // Show notification
     } else {
         showCopyNotification("No names selected!"); // Show error message if nothing selected
     }
@@ -76,20 +76,11 @@ function copyAll() {
 
     if (namesToCopy.length > 0) {
         copyToClipboard(namesToCopy.join("\n"));
-        showCopyNotification(); // Show notification
     } else {
         showCopyNotification("No names to copy!"); // Optionally show a message if there's nothing to copy
     }
 }
 
-function copyToClipboard(text) {
-    const textarea = document.createElement("textarea");
-    textarea.textContent = text;
-    document.body.appendChild(textarea);
-    textarea.select();
-    document.execCommand("copy");
-    document.body.removeChild(textarea);
-}
 
 function convertTextareaToList() {
     const input = document.getElementById("inputTextarea").value.trim();
@@ -112,21 +103,41 @@ function handleFile() {
 }
 
 function parseCSVtoTextarea(data) {
+    const textarea = document.getElementById('inputTextarea'); // Get textarea element first
     const rows = data.split('\n');
     let names = [];
 
-    // Starting from index 1 to skip the header row
+    // Check if rows is empty or only contains a header.
+    // Filter out empty strings from rows before checking length for more robustness.
+    const contentRows = rows.filter(row => row.trim() !== '');
+    if (contentRows.length <= 1) {
+        alert("CSV file is empty or contains only a header.");
+        textarea.value = ""; // Clear the textarea
+        return;
+    }
+
+    // Starting from index 1 of the original rows array to skip the header row
     for (let i = 1; i < rows.length; i++) {
+        // Check if rows[i] is empty, null, or undefined, or just whitespace
+        if (!rows[i] || rows[i].trim() === '') {
+            continue;
+        }
         const cells = rows[i].split('\t');
 
-        // Assuming names are in the first column
-        if (cells[0]) {
+        // Assuming names are in the first column and it's not empty/whitespace
+        if (cells[0] && cells[0].trim() !== '') {
             names.push(cells[0].trim());
         }
     }
 
-    const textarea = document.getElementById('inputTextarea');
-    textarea.value = names.join('\n');
+    if (names.length === 0) {
+        // This can happen if the first column is empty for all data rows, or if the delimiter isn't a tab.
+        alert("No names found in the selected CSV file. Please ensure the file is tab-separated and names are in the first column.");
+        textarea.value = ""; // Clear textarea if no names found
+    } else {
+        alert(`CSV parsed successfully, ${names.length} names loaded.`);
+        textarea.value = names.join('\n');
+    }
 }
 
 function displayNames(names) {
@@ -204,114 +215,68 @@ function toggleCopyAll() {
     }
 }
 
-function filterAndDisplayZugesagt(data) {
+// Generic filter function
+function filterAndDisplayGeneric(data, columnIndex, expectedValue, matchAll = false) {
     const rows = data.split('\n');
-    let namesZugesagt = [];
+    const filteredNames = []; // Use a generic name
 
     // Starting from index 1 to skip the header row
     for (let i = 1; i < rows.length; i++) {
+        if (!rows[i] || rows[i].trim() === '') { // Skip empty or whitespace-only rows
+            continue;
+        }
         const cells = rows[i].split('\t');
 
-        // Check if the response is 'Zugesagt' and add to the list
-        if (cells[2] && cells[2].trim() === 'Zugesagt') {
+        // Ensure cells[0] (for name) exists. If not, we can't process this row for a name.
+        if (!cells[0] || cells[0].trim() === '') { 
+            continue;
+        }
+        
+        // If not matching all, ensure the cell for the condition exists.
+        if (!matchAll && (typeof cells[columnIndex] === 'undefined')) { 
+            continue;
+        }
+
+        if (matchAll || (cells[columnIndex] && cells[columnIndex].trim() === expectedValue)) {
             let name = cells[0].trim();
             if (name.includes(",")) {
                 const splitName = name.split(",").map(n => n.trim());
-                name = splitName[1] + " " + splitName[0]; // Flipping the name
+                // Ensure both parts exist after split before trying to access them
+                if (splitName.length >= 2 && splitName[0] && splitName[1]) {
+                    name = splitName[1] + " " + splitName[0]; // Flipping the name
+                } 
+                // If splitName doesn't have two valid parts, 'name' remains cells[0].trim()
+                // No specific "else" needed here as name is already trimmed from cells[0]
             }
-            namesZugesagt.push(name);
+            // Only push if the name is not empty after potential processing (though trim should handle most)
+            if (name) { 
+                 filteredNames.push(name);
+            }
         }
     }
+    displayNames(filteredNames);
+}
 
-    displayNames(namesZugesagt);
+// Refactored specific filter functions
+function filterAndDisplayZugesagt(data) {
+    filterAndDisplayGeneric(data, 2, 'Zugesagt');
 }
 
 function filterAndDisplayVorbehalt(data) {
-    const rows = data.split('\n');
-    let namesZugesagt = [];
-
-    // Starting from index 1 to skip the header row
-    for (let i = 1; i < rows.length; i++) {
-        const cells = rows[i].split('\t');
-
-        // Check if the response is 'Zugesagt' and add to the list
-        if (cells[2] && cells[2].trim() === 'Mit Vorbehalt') {
-            let name = cells[0].trim();
-            if (name.includes(",")) {
-                const splitName = name.split(",").map(n => n.trim());
-                name = splitName[1] + " " + splitName[0]; // Flipping the name
-            }
-            namesZugesagt.push(name);
-        }
-    }
-
-    displayNames(namesZugesagt);
+    filterAndDisplayGeneric(data, 2, 'Mit Vorbehalt');
 }
 
 function filterAndDisplayDecline(data) {
-    const rows = data.split('\n');
-    let namesZugesagt = [];
-
-    // Starting from index 1 to skip the header row
-    for (let i = 1; i < rows.length; i++) {
-        const cells = rows[i].split('\t');
-
-        // Check if the response is 'Abgesagt' and add to the list
-        if (cells[2] && cells[2].trim() === 'Abgesagt') {
-            let name = cells[0].trim();
-            if (name.includes(",")) {
-                const splitName = name.split(",").map(n => n.trim());
-                name = splitName[1] + " " + splitName[0]; // Flipping the name
-            }
-            namesZugesagt.push(name);
-        }
-    }
-
-    displayNames(namesZugesagt);
+    filterAndDisplayGeneric(data, 2, 'Abgesagt');
 }
 
 function filterAndDisplayNoResponse(data) {
-    const rows = data.split('\n');
-    let namesZugesagt = [];
-
-    // Starting from index 1 to skip the header row
-    for (let i = 1; i < rows.length; i++) {
-        const cells = rows[i].split('\t');
-
-        // Check if the response is 'Abgesagt' and add to the list
-        if (cells[2] && cells[2].trim() === 'Keine') {
-            let name = cells[0].trim();
-            if (name.includes(",")) {
-                const splitName = name.split(",").map(n => n.trim());
-                name = splitName[1] + " " + splitName[0]; // Flipping the name
-            }
-            namesZugesagt.push(name);
-        }
-    }
-
-    displayNames(namesZugesagt);
+    filterAndDisplayGeneric(data, 2, 'Keine');
 }
 
 function filterAndDisplayAll(data) {
-    const rows = data.split('\n');
-    let namesZugesagt = [];
-
-    // Starting from index 1 to skip the header row
-    for (let i = 1; i < rows.length; i++) {
-        const cells = rows[i].split('\t');
-
-        // Check if the response is 'Abgesagt' and add to the list
-        if (true) {
-            let name = cells[0].trim();
-            if (name.includes(",")) {
-                const splitName = name.split(",").map(n => n.trim());
-                name = splitName[1] + " " + splitName[0]; // Flipping the name
-            }
-            namesZugesagt.push(name);
-        }
-    }
-
-    displayNames(namesZugesagt);
+    // columnIndex and expectedValue are irrelevant here as matchAll is true
+    filterAndDisplayGeneric(data, 0, '', true);
 }
 
 function toggleSection(sectionId) {
@@ -382,4 +347,3 @@ document.addEventListener("DOMContentLoaded", function() {
         filterAndDisplayAll(inputData);
     }); 
 });
-
