@@ -147,8 +147,8 @@ function displayNames(names) {
     // Remove duplicates and empty names, then sort by email domain
     names = [...new Set(names.filter(name => name.trim() !== ''))]
         .sort((a, b) => {
-            const domainA = a.split('@')[1] || '';
-            const domainB = b.split('@')[1] || '';
+            const domainA = a.split('@')[1] || ''; // Handle cases where name might not have @
+            const domainB = b.split('@')[1] || ''; // Handle cases where name might not have @
             return domainA.localeCompare(domainB);
         });
 
@@ -164,22 +164,32 @@ function displayNames(names) {
 
         // Extract email domain (if present)
         const emailParts = name.split('@');
-        const domain = emailParts.length > 1 ? '@' + emailParts[1] : '';
+        let displayName = name;
+        let domain = '';
 
+        if (emailParts.length > 1) {
+            displayName = emailParts[0];
+            domain = '@' + emailParts[1];
+        }
+        
         // Remove any email address and dots from the name
-        name = emailParts[0].replace(/\./g, ' ');
+        displayName = displayName.replace(/\./g, ' ');
 
         // Flip last and first names if there's a comma
-        if (name.includes(",")) {
-            let [lastName, firstName] = name.split(",").map(n => n.trim());
-            name = `${firstName} ${lastName}`;
+        if (displayName.includes(",")) {
+            let [lastName, firstName] = displayName.split(",").map(n => n.trim());
+            if (firstName && lastName) { // Ensure both parts exist
+                displayName = `${firstName} ${lastName}`;
+            } else if (lastName) { // Only lastName exists (e.g. "Doe,")
+                displayName = lastName;
+            } // if only firstName, it's already correct
         }
 
         // Store the name without domain in the dataset for copying
-        label.dataset.name = name.trim();
+        label.dataset.name = capitalize(displayName.trim()); // Capitalize before storing
 
         // Display name with domain in UI
-        label.innerHTML = `${name.trim()} <span class="domain">${domain}</span>`;
+        label.innerHTML = `${capitalize(displayName.trim())} <span class="domain">${domain}</span>`;
 
         li.appendChild(checkbox);
         li.appendChild(label);
@@ -275,9 +285,71 @@ function filterAndDisplayNoResponse(data) {
 }
 
 function filterAndDisplayAll(data) {
-    // columnIndex and expectedValue are irrelevant here as matchAll is true
     filterAndDisplayGeneric(data, 0, '', true);
 }
+
+function convertEmailList() {
+    const input = document.getElementById('emailListInput').value.trim();
+    if (!input) {
+        alert("Email list input is empty.");
+        displayNames([]); // Clear the list if input is empty
+        return;
+    }
+
+    const extractedNames = new Set(); // Use Set to avoid duplicates initially
+    const entries = input.split(/[,;\n]+/); 
+
+    const emailRegex = /(?:"?\s*([^"<>,;]+?)\s*"?\s*)?<([^@]+@[^>]+)>/;
+    // Simpler regex for just email:
+    const plainEmailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+
+    for (let entry of entries) {
+        entry = entry.trim();
+        if (!entry) {
+            continue;
+        }
+
+        let nameToProcess = null;
+        const match = entry.match(emailRegex);
+
+        if (match) { // Format: "Name" <email> or <email>
+            if (match[1]) { // Name part exists
+                nameToProcess = match[1].trim();
+                if (nameToProcess.includes(',')) {
+                    const parts = nameToProcess.split(',').map(p => p.trim());
+                    if (parts.length >= 2 && parts[0] && parts[1]) {
+                        nameToProcess = `${parts[1]} ${parts[0]}`;
+                    }
+                }
+            } else if (match[2]) { // No name part, but email in brackets exists
+                let emailUser = match[2].split('@')[0];
+                nameToProcess = emailUser.replace(/[._]/g, ' ');
+            }
+        } else if (entry.includes('@') && plainEmailRegex.test(entry)) { // Likely just an email address
+            let emailUser = entry.split('@')[0];
+            nameToProcess = emailUser.replace(/[._]/g, ' ');
+        } else if (!entry.includes('<') && !entry.includes('>') && !entry.includes('@')) { // No <, >, @ treat as a potential name
+            nameToProcess = entry;
+            if (nameToProcess.includes(',')) {
+                const parts = nameToProcess.split(',').map(p => p.trim());
+                if (parts.length >= 2 && parts[0] && parts[1]) {
+                    nameToProcess = `${parts[1]} ${parts[0]}`;
+                }
+            }
+        }
+        // Else: unparseable entry, skip.
+
+        if (nameToProcess) {
+            const capitalizedName = capitalize(nameToProcess);
+            if (capitalizedName.trim() !== "") {
+                 extractedNames.add(capitalizedName); // Add to Set
+            }
+        }
+    }
+    displayNames(Array.from(extractedNames)); // Convert Set to Array for displayNames
+}
+
 
 function toggleSection(sectionId) {
     var section = document.getElementById(sectionId);
@@ -294,9 +366,11 @@ function toggleSection(sectionId) {
 
 function capitalize(str) {
     // Split the string into words if there's a space or dot followed by a character
-    return str.split(/(?<=\.)\s*|\s+/).map(word => 
-        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-    ).join(' ');
+    return str.split(/(?<=\.)\s*|\s+|(?<=\_)\s*/).map(word => {
+        if (word.length === 0) return '';
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    }).join(' ').replace(/\s+/g, ' ').trim(); // Normalize spaces and trim
+
 }
 
 
@@ -315,6 +389,9 @@ document.addEventListener("DOMContentLoaded", function() {
     // Event listener for file upload
     document.getElementById("csvFile").addEventListener("change", handleFile);
 
+    // Event listener for the new email list converter button
+    document.getElementById("convertEmailListBtn").addEventListener("click", convertEmailList);
+
     // Add event listeners for each icon
     document.getElementById("icon-outlookInvites").addEventListener("click", function() {
         toggleSection('content-outlook');
@@ -326,12 +403,18 @@ document.addEventListener("DOMContentLoaded", function() {
     document.getElementById("icon-zugesagtFilter").addEventListener("click", function() {
         toggleSection('content-zugesagtFilter');
     });
+    // Event listener for the new email list section icon
+    document.getElementById("icon-email-list").addEventListener("click", function() {
+        toggleSection('content-email-list');
+    });
+
     document.getElementById("filterZugesagtBtn").addEventListener("click", function() {
-        const inputData = document.getElementById("inputZugesagtData").value; // Corrected ID
+        const inputData = document.getElementById("inputZugesagtData").value; 
         filterAndDisplayZugesagt(inputData);
     });
     document.getElementById("filterVorbehaltBtn").addEventListener("click", function() {
-        const inputData = document.getElementById("inputZugesagtData").value; // Corrected ID
+        const inputData = document.getElementById("inputZugesagtData").value; 
+
         filterAndDisplayVorbehalt(inputData);
     });
     document.getElementById("filterDeclineBtn").addEventListener("click", function() {
