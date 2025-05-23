@@ -191,7 +191,6 @@ function displayNames(names) {
         // Display name with domain in UI
         label.innerHTML = `${capitalize(displayName.trim())} <span class="domain">${domain}</span>`;
 
-
         li.appendChild(checkbox);
         li.appendChild(label);
         resultList.appendChild(li);
@@ -256,7 +255,10 @@ function filterAndDisplayGeneric(data, columnIndex, expectedValue, matchAll = fa
                 if (splitName.length >= 2 && splitName[0] && splitName[1]) {
                     name = splitName[1] + " " + splitName[0]; // Flipping the name
                 } 
+                // If splitName doesn't have two valid parts, 'name' remains cells[0].trim()
+                // No specific "else" needed here as name is already trimmed from cells[0]
             }
+            // Only push if the name is not empty after potential processing (though trim should handle most)
             if (name) { 
                  filteredNames.push(name);
             }
@@ -368,6 +370,7 @@ function capitalize(str) {
         if (word.length === 0) return '';
         return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
     }).join(' ').replace(/\s+/g, ' ').trim(); // Normalize spaces and trim
+
 }
 
 
@@ -388,7 +391,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Event listener for the new email list converter button
     document.getElementById("convertEmailListBtn").addEventListener("click", convertEmailList);
-
 
     // Add event listeners for each icon
     document.getElementById("icon-outlookInvites").addEventListener("click", function() {
@@ -412,6 +414,7 @@ document.addEventListener("DOMContentLoaded", function() {
     });
     document.getElementById("filterVorbehaltBtn").addEventListener("click", function() {
         const inputData = document.getElementById("inputZugesagtData").value; 
+
         filterAndDisplayVorbehalt(inputData);
     });
     document.getElementById("filterDeclineBtn").addEventListener("click", function() {
