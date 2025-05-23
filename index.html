@@ -22,7 +22,7 @@
                 <h3 onclick="toggleSection('content-outlook')">Outlook Invites <i class="fas fa-chevron-down" id="icon-outlookInvites"></i></h3>
                 <div id="content-outlook" class="content show">
                     <p>Go to invite -> Terminplanungs-Assistent / Scheduling assistant -> Mark all + copy -> insert here</p>
-                    <input type="text" id="inputString" placeholder="Enter names separated by ';' Format last name, first name expected">
+                    <input type="text" id="inputString" placeholder="Enter names separated by ';' Format: Lastname, Firstname e.g., Mustermann, Max; Doe, John">
                     <button id="convertInputBtn">Convert</button>
                 </div>
         </div>
@@ -31,7 +31,7 @@
                 <h3 onclick="toggleSection('content-attendance-list')">MS Teams Attendance List<i class="fas fa-chevron-down" id="icon-ms-teams-attendance-list"></i></h3>
                 <div id="content-attendance-list" class="content">
                     <p>People -> Participants -> Three Dots "..."" -> Download Attendance List -> first row in csv after opening in Excel</p>
-                    <textarea id="inputTextarea" rows="4" cols="50" placeholder="Enter names, one per line; Format last name, first name expected"></textarea>
+                    <textarea id="inputTextarea" rows="4" cols="50" placeholder="Enter names, one per line; Format: Lastname, Firstname e.g., Mustermann, Max\nDoe, John"></textarea>
                     <button id="convertTextareaBtn">Convert</button>
                     <label class="file-upload">
                         Upload CSV
@@ -44,7 +44,7 @@
                 <h3 onclick="toggleSection('content-zugesagtFilter')">Nachverfolgung<i class="fas fa-chevron-down" id="icon-zugesagtFilter"></i></h3>
                 <div id="content-zugesagtFilter" class="content">
                     <p>Paste your TSV data here to filter names with the response corresponding response</p>
-                    <textarea id="inputZugesagtData" rows="6" cols="50" placeholder="Paste TSV data here"></textarea>
+                    <textarea id="inputZugesagtData" rows="6" cols="50" placeholder="Paste TSV data here\ne.g., Mustermann, Max\tSomeOtherData\tZugesagt\nDoe, John\tSomeOtherData\tAbgesagt"></textarea>
                     <button id="filterZugesagtBtn">Filter Zugesagt</button>
                     <button id="filterVorbehaltBtn">Filter Mit Vorbehalt</button>
                     <button id="filterDeclineBtn">Filter Abgelehnt</button>
@@ -56,7 +56,7 @@
                 <h3 onclick="toggleSection('content-email-list')">Convert Email List <i class="fas fa-chevron-down" id="icon-email-list"></i></h3>
                 <div id="content-email-list" class="content">
                     <p>Paste a list of emails (e.g., from Outlook's To/CC fields). The tool will attempt to extract and format names as 'Firstname Lastname'.</p>
-                    <textarea id="emailListInput" rows="4" cols="50" placeholder="Paste email list here..."></textarea>
+                    <textarea id="emailListInput" rows="4" cols="50" placeholder="Paste email list here...\ne.g., Max Mustermann <max.mustermann@example.com>; doe.john@example.com; &quot;Doe, Jane&quot; <jane.doe@example.com>"></textarea>
                     <button id="convertEmailListBtn">Convert</button>
                 </div>
         </div>
