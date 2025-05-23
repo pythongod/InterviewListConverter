@@ -49,8 +49,16 @@
                     <button id="filterVorbehaltBtn">Filter Mit Vorbehalt</button>
                     <button id="filterDeclineBtn">Filter Abgelehnt</button>
                     <button id="filterNoResponseBtn">Filter Keine</button>
-                    <button id="filterAllBtn">Filter All(Wip)</button>
+                    <button id="filterAllBtn">Filter All</button>
             </div>
+        </div>
+        <div class="section">
+                <h3 onclick="toggleSection('content-email-list')">Convert Email List <i class="fas fa-chevron-down" id="icon-email-list"></i></h3>
+                <div id="content-email-list" class="content">
+                    <p>Paste a list of emails (e.g., from Outlook's To/CC fields). The tool will attempt to extract and format names as 'Firstname Lastname'.</p>
+                    <textarea id="emailListInput" rows="4" cols="50" placeholder="Paste email list here..."></textarea>
+                    <button id="convertEmailListBtn">Convert</button>
+                </div>
         </div>
         <h3>Interview List</h3>
         <ul id="resultList"></ul>

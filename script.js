@@ -10,9 +10,10 @@ function copyToClipboard(text) {
     });
 }
 
-function showCopyNotification() {
-    console.log('showCopyNotification called'); // This should appear in your browser console when the function is called
+function showCopyNotification(message) {
+    console.log('showCopyNotification called with message:', message);
     const notification = document.getElementById('copyNotification');
+    notification.textContent = message; // Set the message
     notification.style.display = 'block';
     notification.style.opacity = '1';
     notification.style.visibility = 'visible';
@@ -62,7 +63,6 @@ function copySelected() {
     const textToCopy = namesToCopy.join("\n");
     if (textToCopy) {
         copyToClipboard(textToCopy);
-        showCopyNotification(); // Show notification
     } else {
         showCopyNotification("No names selected!"); // Show error message if nothing selected
     }
@@ -76,20 +76,11 @@ function copyAll() {
 
     if (namesToCopy.length > 0) {
         copyToClipboard(namesToCopy.join("\n"));
-        showCopyNotification(); // Show notification
     } else {
         showCopyNotification("No names to copy!"); // Optionally show a message if there's nothing to copy
     }
 }
 
-function copyToClipboard(text) {
-    const textarea = document.createElement("textarea");
-    textarea.textContent = text;
-    document.body.appendChild(textarea);
-    textarea.select();
-    document.execCommand("copy");
-    document.body.removeChild(textarea);
-}
 
 function convertTextareaToList() {
     const input = document.getElementById("inputTextarea").value.trim();
@@ -112,21 +103,41 @@ function handleFile() {
 }
 
 function parseCSVtoTextarea(data) {
+    const textarea = document.getElementById('inputTextarea'); // Get textarea element first
     const rows = data.split('\n');
     let names = [];
 
-    // Starting from index 1 to skip the header row
+    // Check if rows is empty or only contains a header.
+    // Filter out empty strings from rows before checking length for more robustness.
+    const contentRows = rows.filter(row => row.trim() !== '');
+    if (contentRows.length <= 1) {
+        alert("CSV file is empty or contains only a header.");
+        textarea.value = ""; // Clear the textarea
+        return;
+    }
+
+    // Starting from index 1 of the original rows array to skip the header row
     for (let i = 1; i < rows.length; i++) {
+        // Check if rows[i] is empty, null, or undefined, or just whitespace
+        if (!rows[i] || rows[i].trim() === '') {
+            continue;
+        }
         const cells = rows[i].split('\t');
 
-        // Assuming names are in the first column
-        if (cells[0]) {
+        // Assuming names are in the first column and it's not empty/whitespace
+        if (cells[0] && cells[0].trim() !== '') {
             names.push(cells[0].trim());
         }
     }
 
-    const textarea = document.getElementById('inputTextarea');
-    textarea.value = names.join('\n');
+    if (names.length === 0) {
+        // This can happen if the first column is empty for all data rows, or if the delimiter isn't a tab.
+        alert("No names found in the selected CSV file. Please ensure the file is tab-separated and names are in the first column.");
+        textarea.value = ""; // Clear textarea if no names found
+    } else {
+        alert(`CSV parsed successfully, ${names.length} names loaded.`);
+        textarea.value = names.join('\n');
+    }
 }
 
 function displayNames(names) {
@@ -136,8 +147,8 @@ function displayNames(names) {
     // Remove duplicates and empty names, then sort by email domain
     names = [...new Set(names.filter(name => name.trim() !== ''))]
         .sort((a, b) => {
-            const domainA = a.split('@')[1] || '';
-            const domainB = b.split('@')[1] || '';
+            const domainA = a.split('@')[1] || ''; // Handle cases where name might not have @
+            const domainB = b.split('@')[1] || ''; // Handle cases where name might not have @
             return domainA.localeCompare(domainB);
         });
 
@@ -153,22 +164,33 @@ function displayNames(names) {
 
         // Extract email domain (if present)
         const emailParts = name.split('@');
-        const domain = emailParts.length > 1 ? '@' + emailParts[1] : '';
+        let displayName = name;
+        let domain = '';
 
+        if (emailParts.length > 1) {
+            displayName = emailParts[0];
+            domain = '@' + emailParts[1];
+        }
+        
         // Remove any email address and dots from the name
-        name = emailParts[0].replace(/\./g, ' ');
+        displayName = displayName.replace(/\./g, ' ');
 
         // Flip last and first names if there's a comma
-        if (name.includes(",")) {
-            let [lastName, firstName] = name.split(",").map(n => n.trim());
-            name = `${firstName} ${lastName}`;
+        if (displayName.includes(",")) {
+            let [lastName, firstName] = displayName.split(",").map(n => n.trim());
+            if (firstName && lastName) { // Ensure both parts exist
+                displayName = `${firstName} ${lastName}`;
+            } else if (lastName) { // Only lastName exists (e.g. "Doe,")
+                displayName = lastName;
+            } // if only firstName, it's already correct
         }
 
         // Store the name without domain in the dataset for copying
-        label.dataset.name = name.trim();
+        label.dataset.name = capitalize(displayName.trim()); // Capitalize before storing
 
         // Display name with domain in UI
-        label.innerHTML = `${name.trim()} <span class="domain">${domain}</span>`;
+        label.innerHTML = `${capitalize(displayName.trim())} <span class="domain">${domain}</span>`;
+
 
         li.appendChild(checkbox);
         li.appendChild(label);
@@ -204,115 +226,128 @@ function toggleCopyAll() {
     }
 }
 
-function filterAndDisplayZugesagt(data) {
+// Generic filter function
+function filterAndDisplayGeneric(data, columnIndex, expectedValue, matchAll = false) {
     const rows = data.split('\n');
-    let namesZugesagt = [];
+    const filteredNames = []; // Use a generic name
 
     // Starting from index 1 to skip the header row
     for (let i = 1; i < rows.length; i++) {
+        if (!rows[i] || rows[i].trim() === '') { // Skip empty or whitespace-only rows
+            continue;
+        }
         const cells = rows[i].split('\t');
 
-        // Check if the response is 'Zugesagt' and add to the list
-        if (cells[2] && cells[2].trim() === 'Zugesagt') {
+        // Ensure cells[0] (for name) exists. If not, we can't process this row for a name.
+        if (!cells[0] || cells[0].trim() === '') { 
+            continue;
+        }
+        
+        // If not matching all, ensure the cell for the condition exists.
+        if (!matchAll && (typeof cells[columnIndex] === 'undefined')) { 
+            continue;
+        }
+
+        if (matchAll || (cells[columnIndex] && cells[columnIndex].trim() === expectedValue)) {
             let name = cells[0].trim();
             if (name.includes(",")) {
                 const splitName = name.split(",").map(n => n.trim());
-                name = splitName[1] + " " + splitName[0]; // Flipping the name
+                // Ensure both parts exist after split before trying to access them
+                if (splitName.length >= 2 && splitName[0] && splitName[1]) {
+                    name = splitName[1] + " " + splitName[0]; // Flipping the name
+                } 
             }
-            namesZugesagt.push(name);
+            if (name) { 
+                 filteredNames.push(name);
+            }
         }
     }
+    displayNames(filteredNames);
+}
 
-    displayNames(namesZugesagt);
+// Refactored specific filter functions
+function filterAndDisplayZugesagt(data) {
+    filterAndDisplayGeneric(data, 2, 'Zugesagt');
 }
 
 function filterAndDisplayVorbehalt(data) {
-    const rows = data.split('\n');
-    let namesZugesagt = [];
-
-    // Starting from index 1 to skip the header row
-    for (let i = 1; i < rows.length; i++) {
-        const cells = rows[i].split('\t');
-
-        // Check if the response is 'Zugesagt' and add to the list
-        if (cells[2] && cells[2].trim() === 'Mit Vorbehalt') {
-            let name = cells[0].trim();
-            if (name.includes(",")) {
-                const splitName = name.split(",").map(n => n.trim());
-                name = splitName[1] + " " + splitName[0]; // Flipping the name
-            }
-            namesZugesagt.push(name);
-        }
-    }
-
-    displayNames(namesZugesagt);
+    filterAndDisplayGeneric(data, 2, 'Mit Vorbehalt');
 }
 
 function filterAndDisplayDecline(data) {
-    const rows = data.split('\n');
-    let namesZugesagt = [];
-
-    // Starting from index 1 to skip the header row
-    for (let i = 1; i < rows.length; i++) {
-        const cells = rows[i].split('\t');
-
-        // Check if the response is 'Abgesagt' and add to the list
-        if (cells[2] && cells[2].trim() === 'Abgesagt') {
-            let name = cells[0].trim();
-            if (name.includes(",")) {
-                const splitName = name.split(",").map(n => n.trim());
-                name = splitName[1] + " " + splitName[0]; // Flipping the name
-            }
-            namesZugesagt.push(name);
-        }
-    }
-
-    displayNames(namesZugesagt);
+    filterAndDisplayGeneric(data, 2, 'Abgesagt');
 }
 
 function filterAndDisplayNoResponse(data) {
-    const rows = data.split('\n');
-    let namesZugesagt = [];
-
-    // Starting from index 1 to skip the header row
-    for (let i = 1; i < rows.length; i++) {
-        const cells = rows[i].split('\t');
-
-        // Check if the response is 'Abgesagt' and add to the list
-        if (cells[2] && cells[2].trim() === 'Keine') {
-            let name = cells[0].trim();
-            if (name.includes(",")) {
-                const splitName = name.split(",").map(n => n.trim());
-                name = splitName[1] + " " + splitName[0]; // Flipping the name
-            }
-            namesZugesagt.push(name);
-        }
-    }
-
-    displayNames(namesZugesagt);
+    filterAndDisplayGeneric(data, 2, 'Keine');
 }
 
 function filterAndDisplayAll(data) {
-    const rows = data.split('\n');
-    let namesZugesagt = [];
+    filterAndDisplayGeneric(data, 0, '', true);
+}
 
-    // Starting from index 1 to skip the header row
-    for (let i = 1; i < rows.length; i++) {
-        const cells = rows[i].split('\t');
-
-        // Check if the response is 'Abgesagt' and add to the list
-        if (true) {
-            let name = cells[0].trim();
-            if (name.includes(",")) {
-                const splitName = name.split(",").map(n => n.trim());
-                name = splitName[1] + " " + splitName[0]; // Flipping the name
-            }
-            namesZugesagt.push(name);
-        }
+function convertEmailList() {
+    const input = document.getElementById('emailListInput').value.trim();
+    if (!input) {
+        alert("Email list input is empty.");
+        displayNames([]); // Clear the list if input is empty
+        return;
     }
 
-    displayNames(namesZugesagt);
+    const extractedNames = new Set(); // Use Set to avoid duplicates initially
+    const entries = input.split(/[,;\n]+/); 
+
+    const emailRegex = /(?:"?\s*([^"<>,;]+?)\s*"?\s*)?<([^@]+@[^>]+)>/;
+    // Simpler regex for just email:
+    const plainEmailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+
+    for (let entry of entries) {
+        entry = entry.trim();
+        if (!entry) {
+            continue;
+        }
+
+        let nameToProcess = null;
+        const match = entry.match(emailRegex);
+
+        if (match) { // Format: "Name" <email> or <email>
+            if (match[1]) { // Name part exists
+                nameToProcess = match[1].trim();
+                if (nameToProcess.includes(',')) {
+                    const parts = nameToProcess.split(',').map(p => p.trim());
+                    if (parts.length >= 2 && parts[0] && parts[1]) {
+                        nameToProcess = `${parts[1]} ${parts[0]}`;
+                    }
+                }
+            } else if (match[2]) { // No name part, but email in brackets exists
+                let emailUser = match[2].split('@')[0];
+                nameToProcess = emailUser.replace(/[._]/g, ' ');
+            }
+        } else if (entry.includes('@') && plainEmailRegex.test(entry)) { // Likely just an email address
+            let emailUser = entry.split('@')[0];
+            nameToProcess = emailUser.replace(/[._]/g, ' ');
+        } else if (!entry.includes('<') && !entry.includes('>') && !entry.includes('@')) { // No <, >, @ treat as a potential name
+            nameToProcess = entry;
+            if (nameToProcess.includes(',')) {
+                const parts = nameToProcess.split(',').map(p => p.trim());
+                if (parts.length >= 2 && parts[0] && parts[1]) {
+                    nameToProcess = `${parts[1]} ${parts[0]}`;
+                }
+            }
+        }
+        // Else: unparseable entry, skip.
+
+        if (nameToProcess) {
+            const capitalizedName = capitalize(nameToProcess);
+            if (capitalizedName.trim() !== "") {
+                 extractedNames.add(capitalizedName); // Add to Set
+            }
+        }
+    }
+    displayNames(Array.from(extractedNames)); // Convert Set to Array for displayNames
 }
+
 
 function toggleSection(sectionId) {
     var section = document.getElementById(sectionId);
@@ -329,9 +364,10 @@ function toggleSection(sectionId) {
 
 function capitalize(str) {
     // Split the string into words if there's a space or dot followed by a character
-    return str.split(/(?<=\.)\s*|\s+/).map(word => 
-        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-    ).join(' ');
+    return str.split(/(?<=\.)\s*|\s+|(?<=\_)\s*/).map(word => {
+        if (word.length === 0) return '';
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    }).join(' ').replace(/\s+/g, ' ').trim(); // Normalize spaces and trim
 }
 
 
@@ -350,6 +386,10 @@ document.addEventListener("DOMContentLoaded", function() {
     // Event listener for file upload
     document.getElementById("csvFile").addEventListener("change", handleFile);
 
+    // Event listener for the new email list converter button
+    document.getElementById("convertEmailListBtn").addEventListener("click", convertEmailList);
+
+
     // Add event listeners for each icon
     document.getElementById("icon-outlookInvites").addEventListener("click", function() {
         toggleSection('content-outlook');
@@ -361,12 +401,17 @@ document.addEventListener("DOMContentLoaded", function() {
     document.getElementById("icon-zugesagtFilter").addEventListener("click", function() {
         toggleSection('content-zugesagtFilter');
     });
+    // Event listener for the new email list section icon
+    document.getElementById("icon-email-list").addEventListener("click", function() {
+        toggleSection('content-email-list');
+    });
+
     document.getElementById("filterZugesagtBtn").addEventListener("click", function() {
-        const inputData = document.getElementById("inputZugesagtData").value; // Corrected ID
+        const inputData = document.getElementById("inputZugesagtData").value; 
         filterAndDisplayZugesagt(inputData);
     });
     document.getElementById("filterVorbehaltBtn").addEventListener("click", function() {
-        const inputData = document.getElementById("inputZugesagtData").value; // Corrected ID
+        const inputData = document.getElementById("inputZugesagtData").value; 
         filterAndDisplayVorbehalt(inputData);
     });
     document.getElementById("filterDeclineBtn").addEventListener("click", function() {
@@ -382,4 +427,3 @@ document.addEventListener("DOMContentLoaded", function() {
         filterAndDisplayAll(inputData);
     }); 
 });
-
