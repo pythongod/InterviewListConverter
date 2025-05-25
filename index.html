@@ -1,74 +1,212 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark"> <!-- Assuming dark mode by default, can be toggled by JS -->
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interview List Converter</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="./dist/output.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='1em' font-size='100'>📝</text></svg>">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 
-<body>
-    <div class="container">
-        <h2>Interview List Converter</h2>
-        <p>Enter names depending on the input source, then click 'Convert'. Once converted, you can choose to copy individual names or all names to your clipboard.
-            <br><br>
-            <i>Everything happens in your browser. No names or files are ever uploaded.</i>
-        </p>
-
-        <div class="section">
-                <h3 onclick="toggleSection('content-outlook')">Outlook Invites <i class="fas fa-chevron-down" id="icon-outlookInvites"></i></h3>
-                <div id="content-outlook" class="content show">
-                    <p>Go to invite -> Terminplanungs-Assistent / Scheduling assistant -> Mark all + copy -> insert here</p>
-                    <input type="text" id="inputString" placeholder="Enter names separated by ';' Format: Lastname, Firstname e.g., Mustermann, Max; Doe, John">
-                    <button id="convertInputBtn">Convert</button>
-                </div>
-        </div>
-
-        <div class="section">
-                <h3 onclick="toggleSection('content-attendance-list')">MS Teams Attendance List<i class="fas fa-chevron-down" id="icon-ms-teams-attendance-list"></i></h3>
-                <div id="content-attendance-list" class="content">
-                    <p>People -> Participants -> Three Dots "..."" -> Download Attendance List -> first row in csv after opening in Excel</p>
-                    <textarea id="inputTextarea" rows="4" cols="50" placeholder="Enter names, one per line; Format: Lastname, Firstname e.g., Mustermann, Max\nDoe, John"></textarea>
-                    <button id="convertTextareaBtn">Convert</button>
-                    <label class="file-upload">
-                        Upload CSV
-                        <input type="file" id="csvFile" accept=".csv" onchange="handleFile()" style="display: none;">
-                    </label>
-                </div>
-        </div>
+<body class="bg-background text-foreground font-sans antialiased">
+    <div class="container mx-auto p-4 md:p-8 max-w-3xl">
         
-        <div class="section">
-                <h3 onclick="toggleSection('content-zugesagtFilter')">Nachverfolgung<i class="fas fa-chevron-down" id="icon-zugesagtFilter"></i></h3>
-                <div id="content-zugesagtFilter" class="content">
-                    <p>Paste your TSV data here to filter names with the response corresponding response</p>
-                    <textarea id="inputZugesagtData" rows="6" cols="50" placeholder="Paste TSV data here\ne.g., Mustermann, Max\tSomeOtherData\tZugesagt\nDoe, John\tSomeOtherData\tAbgesagt"></textarea>
-                    <button id="filterZugesagtBtn">Filter Zugesagt</button>
-                    <button id="filterVorbehaltBtn">Filter Mit Vorbehalt</button>
-                    <button id="filterDeclineBtn">Filter Abgelehnt</button>
-                    <button id="filterNoResponseBtn">Filter Keine</button>
-                    <button id="filterAllBtn">Filter All</button>
+        <header class="mb-8 text-center">
+            <h1 class="text-4xl font-bold tracking-tight text-primary mb-2">Interview List Converter</h1>
+            <p class="text-lg text-muted-foreground">
+                Enter names depending on the input source, then click 'Convert'. Once converted, you can choose to copy individual names or all names to your clipboard.
+                <br><br>
+                <i class="text-sm">Everything happens in your browser. No names or files are ever uploaded.</i>
+            </p>
+        </header>
+
+        <!-- Accordion for sections -->
+        <div data-accordion-group class="space-y-4">
+
+            <!-- Outlook Invites Section -->
+            <div class="rounded-lg border bg-card text-card-foreground shadow-sm" data-accordion-item>
+                <button data-accordion-trigger class="flex w-full items-center justify-between p-4 font-medium text-left hover:bg-muted/50">
+                    <span>Outlook Invites</span>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200"
+                      data-accordion-icon
+                    >
+                      <path d="m6 9 6 6 6-6"/>
+                    </svg>
+                </button>
+                <div data-accordion-content class="overflow-hidden p-4 border-t border-border data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+                    <p class="text-sm text-muted-foreground mb-3">Go to invite -> Terminplanungs-Assistent / Scheduling assistant -> Mark all + copy -> insert here</p>
+                    <input type="text" id="inputString" placeholder="Enter names separated by ';' Format: Lastname, Firstname e.g., Mustermann, Max; Doe, John" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mb-3">
+                    <button id="convertInputBtn" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">Convert</button>
+                </div>
+            </div>
+
+            <!-- MS Teams Attendance List Section -->
+            <div class="rounded-lg border bg-card text-card-foreground shadow-sm" data-accordion-item>
+                <button data-accordion-trigger class="flex w-full items-center justify-between p-4 font-medium text-left hover:bg-muted/50">
+                    <span>MS Teams Attendance List</span>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200"
+                      data-accordion-icon
+                    >
+                      <path d="m6 9 6 6 6-6"/>
+                    </svg>
+                </button>
+                <div data-accordion-content class="overflow-hidden p-4 border-t border-border data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down" style="display: none;"> <!-- Initially hidden -->
+                    <p class="text-sm text-muted-foreground mb-3">People -> Participants -> Three Dots "..." -> Download Attendance List -> first row in csv after opening in Excel</p>
+                    <textarea id="inputTextarea" rows="4" placeholder="Enter names, one per line; Format: Lastname, Firstname e.g., Mustermann, Max\nDoe, John" class="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mb-3"></textarea>
+                    <div class="flex space-x-2">
+                        <button id="convertTextareaBtn" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">Convert</button>
+                        <label class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 cursor-pointer">
+                            Upload CSV
+                            <input type="file" id="csvFile" accept=".csv" onchange="handleFile()" style="display: none;">
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Nachverfolgung Section -->
+            <div class="rounded-lg border bg-card text-card-foreground shadow-sm" data-accordion-item>
+                <button data-accordion-trigger class="flex w-full items-center justify-between p-4 font-medium text-left hover:bg-muted/50">
+                    <span>Nachverfolgung</span>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200"
+                      data-accordion-icon
+                    >
+                      <path d="m6 9 6 6 6-6"/>
+                    </svg>
+                </button>
+                <div data-accordion-content class="overflow-hidden p-4 border-t border-border data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down" style="display: none;"> <!-- Initially hidden -->
+                    <p class="text-sm text-muted-foreground mb-3">Paste your TSV data here to filter names with the corresponding response</p>
+                    <textarea id="inputZugesagtData" rows="6" placeholder="Paste TSV data here\ne.g., Mustermann, Max\tSomeOtherData\tZugesagt\nDoe, John\tSomeOtherData\tAbgesagt" class="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mb-3"></textarea>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        <button id="filterZugesagtBtn" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-4 py-2">Filter Zugesagt</button>
+                        <button id="filterVorbehaltBtn" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-4 py-2">Filter Mit Vorbehalt</button>
+                        <button id="filterDeclineBtn" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-destructive text-destructive-foreground hover:bg-destructive/90 h-10 px-4 py-2">Filter Abgelehnt</button>
+                        <button id="filterNoResponseBtn" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-4 py-2">Filter Keine</button>
+                        <button id="filterAllBtn" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-4 py-2">Filter All</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Convert Email List Section -->
+            <div class="rounded-lg border bg-card text-card-foreground shadow-sm" data-accordion-item>
+                <button data-accordion-trigger class="flex w-full items-center justify-between p-4 font-medium text-left hover:bg-muted/50">
+                    <span>Convert Email List</span>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200"
+                      data-accordion-icon
+                    >
+                      <path d="m6 9 6 6 6-6"/>
+                    </svg>
+                </button>
+                <div data-accordion-content class="overflow-hidden p-4 border-t border-border data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down" style="display: none;"> <!-- Initially hidden -->
+                    <p class="text-sm text-muted-foreground mb-3">Paste a list of emails (e.g., from Outlook's To/CC fields). The tool will attempt to extract and format names as 'Firstname Lastname'.</p>
+                    <textarea id="emailListInput" rows="4" placeholder="Paste email list here...\ne.g., Max Mustermann <max.mustermann@example.com>; doe.john@example.com; &quot;Doe, Jane&quot; <jane.doe@example.com>" class="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mb-3"></textarea>
+                    <button id="convertEmailListBtn" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">Convert</button>
+                </div>
             </div>
         </div>
-        <div class="section">
-                <h3 onclick="toggleSection('content-email-list')">Convert Email List <i class="fas fa-chevron-down" id="icon-email-list"></i></h3>
-                <div id="content-email-list" class="content">
-                    <p>Paste a list of emails (e.g., from Outlook's To/CC fields). The tool will attempt to extract and format names as 'Firstname Lastname'.</p>
-                    <textarea id="emailListInput" rows="4" cols="50" placeholder="Paste email list here...\ne.g., Max Mustermann <max.mustermann@example.com>; doe.john@example.com; &quot;Doe, Jane&quot; <jane.doe@example.com>"></textarea>
-                    <button id="convertEmailListBtn">Convert</button>
-                </div>
-        </div>
-        <h3>Interview List</h3>
-        <ul id="resultList"></ul>
-        <div>
-            <button onclick="copySelected()">Copy Selected</button>
-            <button id="copyAllButton" onclick="copyAll()">Copy All</button>
-        </div>        
-    </div>
-    <div id="copyNotification" class="copy-notification" style="display: none;">Copied to clipboard!</div>
-    <script src="script.js"></script>
-</body>
 
+        <!-- Interview List Section -->
+        <div class="mt-8">
+            <h2 class="text-2xl font-semibold tracking-tight text-primary mb-4">Interview List</h2>
+            <ul id="resultList" class="space-y-2">
+                <!-- JS will populate this. Example LI structure:
+                <li class="flex items-center space-x-2 p-2 rounded-md bg-card hover:bg-muted/50">
+                    <input type="checkbox" id="checkbox-1" class="peer h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground" />
+                    <label for="checkbox-1" class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Max Mustermann</label>
+                </li>
+                -->
+            </ul>
+            <div class="mt-4 flex space-x-2">
+                <button onclick="copySelected()" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">Copy Selected</button>
+                <button id="copyAllButton" onclick="copyAll()" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-4 py-2">Copy All</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Copy Notification - Styled to mimic shadcn/ui Toast -->
+    <div id="copyNotification" 
+         class="fixed bottom-4 right-4 p-4 rounded-lg border bg-background text-foreground shadow-xl transition-all duration-300 ease-in-out transform data-[state=closed]:opacity-0 data-[state=closed]:translate-x-[100%] data-[state=open]:opacity-100 data-[state=open]:translate-x-0 data-[state=open]:animate-toast-slide-in-right data-[state=closed]:animate-toast-slide-out-right" 
+         style="display: none;" 
+         data-state="closed">
+         Copied to clipboard!
+    </div>
+    
+    <script src="script.js"></script>
+    <!-- Basic Accordion Toggle Script (will be refined later) -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize first accordion item as open
+            const firstAccordionTrigger = document.querySelector('[data-accordion-group] [data-accordion-item]:first-child [data-accordion-trigger]');
+            const firstAccordionContent = document.querySelector('[data-accordion-group] [data-accordion-item]:first-child [data-accordion-content]');
+            const firstAccordionIcon = document.querySelector('[data-accordion-group] [data-accordion-item]:first-child [data-accordion-icon]');
+
+            if (firstAccordionTrigger && firstAccordionContent && firstAccordionIcon) {
+                firstAccordionContent.style.display = 'block';
+                firstAccordionContent.setAttribute('data-state', 'open');
+                firstAccordionIcon.classList.add('rotate-180'); // Rotate open icon
+            }
+
+
+            const accordionTriggers = document.querySelectorAll('[data-accordion-trigger]');
+            accordionTriggers.forEach(trigger => {
+                trigger.addEventListener('click', () => {
+                    const content = trigger.nextElementSibling;
+                    const icon = trigger.querySelector('[data-accordion-icon]');
+                    const isOpen = content.style.display === 'block';
+
+                    // Close all other accordions in the same group if not allowing multiple open
+                    // For now, this basic toggle will allow multiple open.
+                    // A more robust solution would use the data attributes from shadcn/ui for state.
+
+                    content.style.display = isOpen ? 'none' : 'block';
+                    content.setAttribute('data-state', isOpen ? 'closed' : 'open');
+                    
+                    if (icon) {
+                        icon.classList.toggle('rotate-180', !isOpen); // Toggle rotation based on new state
+                    }
+                });
+            });
+        });
+    </script>
+</body>
 </html>

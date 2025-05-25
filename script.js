@@ -13,18 +13,23 @@ function copyToClipboard(text) {
 function showCopyNotification(message) {
     console.log('showCopyNotification called with message:', message);
     const notification = document.getElementById('copyNotification');
-    notification.textContent = message; // Set the message
-    notification.style.display = 'block';
-    notification.style.opacity = '1';
-    notification.style.visibility = 'visible';
+    if (!notification) return;
 
+    notification.textContent = message; // Set the message
+    notification.style.display = 'block'; // Make it display block to enable animation
+    requestAnimationFrame(() => { // Ensure display:block is applied before changing data-state
+      notification.setAttribute('data-state', 'open');
+    });
+
+    // Hide the notification after a delay
     setTimeout(() => {
-        notification.style.opacity = '0';
-        notification.style.visibility = 'hidden';
+        notification.setAttribute('data-state', 'closed');
+        // Set display to none after the animation finishes
+        // The animation duration is 0.4s (400ms) as defined in tailwind.config.js
         setTimeout(() => {
             notification.style.display = 'none';
-        }, 500); // Wait for the fade out to finish before hiding
-    }, 2000); // 2000 milliseconds = 2 seconds
+        }, 400); // Match this to your animation duration
+    }, 2000); // 2000 milliseconds = 2 seconds to show the toast
 }
 
 
@@ -154,12 +159,18 @@ function displayNames(names) {
 
     names.forEach((name, index) => {
         const li = document.createElement("li");
+        // Apply Tailwind classes for list items (mimicking shadcn/ui card for items)
+        li.className = "flex items-center space-x-3 p-3 rounded-md border bg-card text-card-foreground shadow-sm hover:bg-muted/50 transition-colors";
+
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox";
-        checkbox.className = "nameCheckbox";
+        // Apply Tailwind classes for checkboxes (mimicking shadcn/ui checkbox)
+        checkbox.className = "nameCheckbox peer h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground";
         checkbox.id = "checkbox" + index;
 
         const label = document.createElement("label");
+        // Apply Tailwind classes for labels
+        label.className = "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-grow";
         label.htmlFor = "checkbox" + index;
 
         // Extract email domain (if present)
@@ -189,41 +200,96 @@ function displayNames(names) {
         label.dataset.name = capitalize(displayName.trim()); // Capitalize before storing
 
         // Display name with domain in UI
-        label.innerHTML = `${capitalize(displayName.trim())} <span class="domain">${domain}</span>`;
+        label.innerHTML = `${capitalize(displayName.trim())} <span class="text-xs text-muted-foreground">${domain}</span>`; // Styled domain span
 
         li.appendChild(checkbox);
         li.appendChild(label);
         resultList.appendChild(li);
 
+        // Enhanced click listener for the whole LI to toggle the checkbox,
+        // but prevent if the click was directly on the checkbox itself or on a link/button inside label if any.
         li.addEventListener('click', function(event) {
-            if (event.target.tagName !== 'INPUT') {
+            if (event.target !== checkbox) { // Check if the click target is not the checkbox itself
                 checkbox.checked = !checkbox.checked;
-                toggleCopyAll();
+                // Manually trigger change event for any other listeners if necessary
+                const changeEvent = new Event('change', { bubbles: true });
+                checkbox.dispatchEvent(changeEvent);
             }
+            // toggleCopyAll is now called by the checkbox's change event
         });
+
+        // Add change event listener to checkbox to handle state of copyAllButton
+        checkbox.addEventListener('change', toggleCopyAll);
     });
 }
 
 function toggleCopyAll() {
     const checkboxes = document.querySelectorAll(".nameCheckbox");
     const copyAllButton = document.getElementById("copyAllButton");
+    const copySelectedButton = document.querySelector("button[onclick='copySelected()']"); // Find by onclick
 
-    let isCheckedFound = false;
+    let anyCheckboxChecked = false;
     for (let checkbox of checkboxes) {
         if (checkbox.checked) {
-            isCheckedFound = true;
+            anyCheckboxChecked = true;
             break;
         }
     }
 
-    if (isCheckedFound) {
-        copyAllButton.setAttribute("disabled", true);
-        copyAllButton.style.backgroundColor = "#bbb";
+    // Disable "Copy All" if any checkbox is selected, enable "Copy Selected"
+    // Enable "Copy All" if no checkbox is selected, disable "Copy Selected"
+    if (anyCheckboxChecked) {
+        copyAllButton.setAttribute("disabled", "true");
+        if (copySelectedButton) {
+            copySelectedButton.removeAttribute("disabled");
+        }
     } else {
         copyAllButton.removeAttribute("disabled");
-        copyAllButton.style.backgroundColor = "#5c94d3";
+        if (copySelectedButton) {
+            copySelectedButton.setAttribute("disabled", "true");
+        }
     }
 }
+
+
+// Initialize button states on DOMContentLoaded
+document.addEventListener("DOMContentLoaded", function() {
+    toggleCopyAll(); // Call once to set initial state
+    // Attaching the event listener to 'convertInputBtn' button
+    document.getElementById("convertInputBtn").addEventListener("click", convertToList);
+
+    // Attaching the event listener to 'convertTextareaBtn' button
+    document.getElementById("convertTextareaBtn").addEventListener("click", convertTextareaToList);
+
+    // Event listener for file upload
+    document.getElementById("csvFile").addEventListener("change", handleFile);
+
+    // Event listener for the new email list converter button
+    document.getElementById("convertEmailListBtn").addEventListener("click", convertEmailList);
+
+    document.getElementById("filterZugesagtBtn").addEventListener("click", function() {
+        const inputData = document.getElementById("inputZugesagtData").value; 
+        filterAndDisplayZugesagt(inputData);
+    });
+    document.getElementById("filterVorbehaltBtn").addEventListener("click", function() {
+        const inputData = document.getElementById("inputZugesagtData").value; 
+
+        filterAndDisplayVorbehalt(inputData);
+    });
+    document.getElementById("filterDeclineBtn").addEventListener("click", function() {
+        const inputData = document.getElementById("inputZugesagtData").value;
+        filterAndDisplayDecline(inputData);
+    });
+    document.getElementById("filterNoResponseBtn").addEventListener("click", function() {
+        const inputData = document.getElementById("inputZugesagtData").value;
+        filterAndDisplayNoResponse(inputData);
+    }); 
+    document.getElementById("filterAllBtn").addEventListener("click", function() {
+        const inputData = document.getElementById("inputZugesagtData").value;
+        filterAndDisplayAll(inputData);
+    }); 
+});
+
 
 // Generic filter function
 function filterAndDisplayGeneric(data, columnIndex, expectedValue, matchAll = false) {
@@ -350,20 +416,6 @@ function convertEmailList() {
     displayNames(Array.from(extractedNames)); // Convert Set to Array for displayNames
 }
 
-
-function toggleSection(sectionId) {
-    var section = document.getElementById(sectionId);
-    var iconId = 'icon-' + sectionId;
-    var icon = document.getElementById(iconId);
-    section.classList.toggle("show");
-
-    if (section.classList.contains("show")) {
-        icon.classList.replace("fa-chevron-down", "fa-chevron-up");
-    } else {
-        icon.classList.replace("fa-chevron-up", "fa-chevron-down");
-    }
-}
-
 function capitalize(str) {
     // Split the string into words if there's a space or dot followed by a character
     return str.split(/(?<=\.)\s*|\s+|(?<=\_)\s*/).map(word => {
@@ -376,57 +428,3 @@ function capitalize(str) {
 
 // Example usage:
 // filterAndDisplayZugesagt(inputData); // Where inputData is your TSV string
-
-
-// Wait for the DOM to be fully loaded
-document.addEventListener("DOMContentLoaded", function() {
-    // Attaching the event listener to 'convertInputBtn' button
-    document.getElementById("convertInputBtn").addEventListener("click", convertToList);
-
-    // Attaching the event listener to 'convertTextareaBtn' button
-    document.getElementById("convertTextareaBtn").addEventListener("click", convertTextareaToList);
-
-    // Event listener for file upload
-    document.getElementById("csvFile").addEventListener("change", handleFile);
-
-    // Event listener for the new email list converter button
-    document.getElementById("convertEmailListBtn").addEventListener("click", convertEmailList);
-
-    // Add event listeners for each icon
-    document.getElementById("icon-outlookInvites").addEventListener("click", function() {
-        toggleSection('content-outlook');
-    });
-    
-    document.getElementById("icon-ms-teams-attendance-list").addEventListener("click", function() {
-        toggleSection('content-attendance-list');
-    });
-    document.getElementById("icon-zugesagtFilter").addEventListener("click", function() {
-        toggleSection('content-zugesagtFilter');
-    });
-    // Event listener for the new email list section icon
-    document.getElementById("icon-email-list").addEventListener("click", function() {
-        toggleSection('content-email-list');
-    });
-
-    document.getElementById("filterZugesagtBtn").addEventListener("click", function() {
-        const inputData = document.getElementById("inputZugesagtData").value; 
-        filterAndDisplayZugesagt(inputData);
-    });
-    document.getElementById("filterVorbehaltBtn").addEventListener("click", function() {
-        const inputData = document.getElementById("inputZugesagtData").value; 
-
-        filterAndDisplayVorbehalt(inputData);
-    });
-    document.getElementById("filterDeclineBtn").addEventListener("click", function() {
-        const inputData = document.getElementById("inputZugesagtData").value;
-        filterAndDisplayDecline(inputData);
-    });
-    document.getElementById("filterNoResponseBtn").addEventListener("click", function() {
-        const inputData = document.getElementById("inputZugesagtData").value;
-        filterAndDisplayNoResponse(inputData);
-    }); 
-    document.getElementById("filterAllBtn").addEventListener("click", function() {
-        const inputData = document.getElementById("inputZugesagtData").value;
-        filterAndDisplayAll(inputData);
-    }); 
-});
