@@ -1,5 +1,48 @@
-// Function Definitions
+// Dark Mode Toggle Logic
+const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+const themeToggleButton = document.getElementById('darkModeToggle');
 
+// Function to update button icon based on theme
+function updateThemeButtonIcon() {
+    if (!themeToggleDarkIcon || !themeToggleLightIcon) return; // Guard against missing elements
+
+    if (document.documentElement.classList.contains('dark') || localStorage.theme === 'dark') {
+        themeToggleLightIcon.classList.remove('hidden');
+        themeToggleDarkIcon.classList.add('hidden');
+    } else {
+        themeToggleDarkIcon.classList.remove('hidden');
+        themeToggleLightIcon.classList.add('hidden');
+    }
+}
+
+// Apply initial theme (on page load)
+if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.documentElement.classList.add('dark');
+} else {
+    document.documentElement.classList.remove('dark');
+}
+updateThemeButtonIcon(); // Set initial icon state
+
+// Event listener for the toggle button
+if (themeToggleButton) {
+    themeToggleButton.addEventListener('click', function() {
+        // Toggle theme class on <html>
+        document.documentElement.classList.toggle('dark');
+
+        // Update localStorage
+        if (document.documentElement.classList.contains('dark')) {
+            localStorage.theme = 'dark';
+        } else {
+            localStorage.theme = 'light';
+        }
+
+        // Update button icon
+        updateThemeButtonIcon();
+    });
+}
+
+// Original Function Definitions
 // Your copyToClipboard function should be using the Clipboard API:
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(() => {
