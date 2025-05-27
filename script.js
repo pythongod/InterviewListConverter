@@ -401,73 +401,106 @@ function convertEmailList() {
     const input = document.getElementById('emailListInput').value.trim();
     if (!input) {
         alert("Email list input is empty.");
-        displayNames([]); // Clear the list if input is empty
+        module.exports.displayNames([]); // Clear the list if input is empty
         return;
     }
 
     const extractedNames = new Set(); // Use Set to avoid duplicates initially
-    const entries = input.split(/[,;\n]+/); 
+    const entryRegex = /"([^"]*)"\s*<([^>]*)>|([^<>,;\s]+@[^<>,;\s]+)|<([^>]*)>|([^,;\n]+)/g;
 
-    const emailRegex = /(?:"?\s*([^"<>,;]+?)\s*"?\s*)?<([^@]+@[^>]+)>/;
-    // Simpler regex for just email:
-    const plainEmailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    for (const match of input.matchAll(entryRegex)) {
+        let nameSource = null;
 
-
-    for (let entry of entries) {
-        entry = entry.trim();
-        if (!entry) {
-            continue;
+        if (match[1] !== undefined && match[2] !== undefined) { // "Quoted Name" <email> (Group 1: Name, Group 2: Email)
+            nameSource = match[1]; // Group 1 is `[^"]*`, so quotes are not included
+        } else if (match[3] !== undefined) { // Plain email (Group 3: Full Email)
+            nameSource = match[3].split('@')[0].replace(/[._]/g, ' ');
+        } else if (match[4] !== undefined) { // Email in angle brackets (Group 4: Full Email)
+            nameSource = match[4].split('@')[0].replace(/[._]/g, ' ');
+        } else if (match[5] !== undefined) { // Plain name or other text (Group 5)
+            nameSource = match[5].trim();
+            // The original simple quote stripping for match[5] is removed,
+            // as it's now covered by the iterative stripping below.
         }
+        
+        let nameToProcess = null; 
 
-        let nameToProcess = null;
-        const match = entry.match(emailRegex);
-
-        if (match) { // Format: "Name" <email> or <email>
-            if (match[1]) { // Name part exists
-                nameToProcess = match[1].trim();
-                if (nameToProcess.includes(',')) {
-                    const parts = nameToProcess.split(',').map(p => p.trim());
-                    if (parts.length >= 2 && parts[0] && parts[1]) {
-                        nameToProcess = `${parts[1]} ${parts[0]}`;
-                    }
-                }
-            } else if (match[2]) { // No name part, but email in brackets exists
-                let emailUser = match[2].split('@')[0];
-                nameToProcess = emailUser.replace(/[._]/g, ' ');
+        if (nameSource !== null && nameSource !== undefined) { 
+            let cleanedNameSource = ""; 
+            if (nameSource) { // Ensure nameSource is not null before toString()
+                cleanedNameSource = nameSource.toString().trim(); 
             }
-        } else if (entry.includes('@') && plainEmailRegex.test(entry)) { // Likely just an email address
-            let emailUser = entry.split('@')[0];
-            nameToProcess = emailUser.replace(/[._]/g, ' ');
-        } else if (!entry.includes('<') && !entry.includes('>') && !entry.includes('@')) { // No <, >, @ treat as a potential name
-            nameToProcess = entry;
-            if (nameToProcess.includes(',')) {
+
+            let previousState = "";
+            // Iteratively strip pairs of quotes (single or double) and re-trim
+            while (previousState !== cleanedNameSource && cleanedNameSource) {
+                previousState = cleanedNameSource;
+                if (cleanedNameSource.startsWith('"') && cleanedNameSource.endsWith('"')) {
+                    cleanedNameSource = cleanedNameSource.substring(1, cleanedNameSource.length - 1).trim();
+                }
+                if (cleanedNameSource.startsWith("'") && cleanedNameSource.endsWith("'")) {
+                    cleanedNameSource = cleanedNameSource.substring(1, cleanedNameSource.length - 1).trim();
+                }
+            }
+            nameToProcess = cleanedNameSource; // nameToProcess is NOW ready for further specific processing
+            // nameToProcess is NOW ready for further specific processing
+            
+            // Improved match[5] processing specifically for email-like strings
+            // This needs to be applied if the original source was match[5] AND nameToProcess is not empty
+            if (match[5] !== undefined && nameToProcess) { 
+                const emailInAngleBracketsMatch = nameToProcess.match(/^<([^@]+@[^>]+)>$/);
+                const plainEmailMatch = nameToProcess.match(/^([^<>()",;\s]+@[^<>()",;\s]+)$/); 
+
+                if (emailInAngleBracketsMatch) {
+                    // It's <email@domain.com>
+                    nameToProcess = emailInAngleBracketsMatch[1].split('@')[0].replace(/[._]/g, ' ').trim();
+                } else if (plainEmailMatch) {
+                    // It's email@domain.com
+                    nameToProcess = plainEmailMatch[1].split('@')[0].replace(/[._]/g, ' ').trim();
+                }
+                // If neither, nameToProcess (from match[5], quotes stripped) remains as is.
+            }
+
+            // Now, continue with the "malformed" check, comma flipping, etc.
+            // Ensure nameToProcess is not null or empty before toLowerCase()
+            if (nameToProcess && nameToProcess.toLowerCase() === "malformed") { // Check nameToProcess itself
+                continue; 
+            }
+
+            if (nameToProcess && nameToProcess.includes(',')) { // Check nameToProcess itself
                 const parts = nameToProcess.split(',').map(p => p.trim());
                 if (parts.length >= 2 && parts[0] && parts[1]) {
                     nameToProcess = `${parts[1]} ${parts[0]}`;
                 }
             }
-        }
-        // Else: unparseable entry, skip.
 
-        if (nameToProcess) {
-            const capitalizedName = capitalize(nameToProcess);
-            if (capitalizedName.trim() !== "") {
-                 extractedNames.add(capitalizedName); // Add to Set
+            if (nameToProcess && nameToProcess.trim() !== "") {
+                const capitalizedName = capitalize(nameToProcess);
+                if (capitalizedName.trim() !== "") {
+                    extractedNames.add(capitalizedName);
+                }
             }
         }
     }
-    displayNames(Array.from(extractedNames)); // Convert Set to Array for displayNames
+    module.exports.displayNames(Array.from(extractedNames));
 }
 
 function capitalize(str) {
-    // Split the string into words if there's a space or dot followed by a character
-    return str.split(/(?<=\.)\s*|\s+|(?<=\_)\s*/).map(word => {
-        if (word.length === 0) return '';
-        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-    }).join(' ').replace(/\s+/g, ' ').trim(); // Normalize spaces and trim
-
+    // Replace all dots and underscores with a single space.
+    const KATE = str.replace(/[._]/g, ' '); //KATE: temp var name to avoid collision
+    // Split by spaces, capitalize each word, filter out empty strings from split, join, and trim.
+    return KATE.split(/\s+/) // Split by one or more spaces
+        .map(word => {
+            if (word.length === 0) return '';
+            return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        })
+        .filter(word => word !== '') // Remove any empty strings that might result from multiple spaces
+        .join(' ')
+        .trim();
 }
 
+// displayNames is exported for testing purposes
+module.exports = { capitalize, convertEmailList, displayNames };
 
 // Example usage:
 // filterAndDisplayZugesagt(inputData); // Where inputData is your TSV string
