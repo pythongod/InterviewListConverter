@@ -401,7 +401,12 @@ function convertEmailList() {
     const input = document.getElementById('emailListInput').value.trim();
     if (!input) {
         alert("Email list input is empty.");
-        module.exports.displayNames([]); // Clear the list if input is empty
+        // Check if we're in testing environment
+        if (typeof module !== 'undefined' && module.exports && module.exports.displayNames) {
+            module.exports.displayNames([]); // Clear the list if input is empty
+        } else {
+            displayNames([]); // Clear the list if input is empty
+        }
         return;
     }
 
@@ -525,7 +530,13 @@ function convertEmailList() {
             }
         }
     }
-    module.exports.displayNames(Array.from(extractedNames));
+    
+    // Check if we're in testing environment
+    if (typeof module !== 'undefined' && module.exports && module.exports.displayNames) {
+        module.exports.displayNames(Array.from(extractedNames));
+    } else {
+        displayNames(Array.from(extractedNames));
+    }
 }
 
 function capitalize(str) {
@@ -543,7 +554,9 @@ function capitalize(str) {
 }
 
 // displayNames is exported for testing purposes
-module.exports = { capitalize, convertEmailList, displayNames };
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { capitalize, convertEmailList, displayNames };
+}
 
 // Example usage:
 // filterAndDisplayZugesagt(inputData); // Where inputData is your TSV string
