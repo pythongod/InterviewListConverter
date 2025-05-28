@@ -1,10 +1,12 @@
 /** @type {import('jest').Config} */
 const config = {
   testEnvironment: 'jsdom',
-  transform: {}, // Attempt to use Node's native ESM support
-  // If native ESM support doesn't work, we might need to add:
-  // extensionsToTreatAsEsm: ['.js'], // Treat .js files as ES modules
-  // moduleNameMapper to handle specific paths if needed
+  transform: {
+    '^.+\\.js$': ['babel-jest', { presets: [['@babel/preset-env', { targets: { node: 'current' } }]] }]
+  },
+  moduleNameMapper: {
+    '^(\\.{1,2}/.*)\\.js$': '$1'
+  }
 };
 
 module.exports = config;
