@@ -2,7 +2,7 @@
 
 This directory contains GitHub Actions workflows for automated testing and continuous integration.
 
-## Workflows
+## Workflows 
 
 ### `test.yml` - Basic Test Runner
 - **Triggers**: Push to main/master branch, Pull Requests
