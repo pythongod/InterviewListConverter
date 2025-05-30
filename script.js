@@ -264,6 +264,20 @@ function displayNames(names) {
         // Add change event listener to checkbox to handle state of copyAllButton
         checkbox.addEventListener('change', toggleCopyAll);
     });
+
+    // Scroll to the Interview List section after displaying names
+    scrollToInterviewList();
+}
+
+// Function to smoothly scroll to the Interview List section
+function scrollToInterviewList() {
+    const interviewListSection = document.querySelector('h2');
+    if (interviewListSection && interviewListSection.textContent.includes('Interview List')) {
+        interviewListSection.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+        });
+    }
 }
 
 function toggleCopyAll() {
