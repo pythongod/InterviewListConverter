@@ -117,10 +117,10 @@ function copySelected() {
 }
 
 function copyAll() {
-    const labels = document.querySelectorAll("#resultList label");
+    const nameDisplays = document.querySelectorAll("#resultList div[data-name]");
     let namesToCopy = [];
 
-    labels.forEach(label => namesToCopy.push(label.dataset.name));
+    nameDisplays.forEach(nameDisplay => namesToCopy.push(nameDisplay.dataset.name));
 
     if (namesToCopy.length > 0) {
         copyToClipboard(namesToCopy.join("\n"));
@@ -211,10 +211,10 @@ function displayNames(names) {
         checkbox.className = "nameCheckbox peer h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground";
         checkbox.id = "checkbox" + index;
 
-        const label = document.createElement("label");
-        // Apply Tailwind classes for labels
-        label.className = "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-grow";
-        label.htmlFor = "checkbox" + index;
+        // Using div instead of label to avoid htmlFor interference with our click handler
+        const nameDisplay = document.createElement("div");
+        // Apply Tailwind classes for the name display
+        nameDisplay.className = "text-sm font-medium leading-none cursor-pointer flex-grow";
 
         // Extract email domain (if present)
         const emailParts = name.split('@');
@@ -240,13 +240,13 @@ function displayNames(names) {
         }
 
         // Store the name without domain in the dataset for copying
-        label.dataset.name = capitalize(displayName.trim()); // Capitalize before storing
+        nameDisplay.dataset.name = capitalize(displayName.trim()); // Capitalize before storing
 
         // Display name with domain in UI
-        label.innerHTML = `${capitalize(displayName.trim())} <span class="text-xs text-muted-foreground">${domain}</span>`; // Styled domain span
+        nameDisplay.innerHTML = `${capitalize(displayName.trim())} <span class="text-xs text-muted-foreground">${domain}</span>`; // Styled domain span
 
         li.appendChild(checkbox);
-        li.appendChild(label);
+        li.appendChild(nameDisplay);
         resultList.appendChild(li);
 
         // Enhanced click listener for the whole LI to toggle the checkbox
