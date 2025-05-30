@@ -203,7 +203,7 @@ function displayNames(names) {
     names.forEach((name, index) => {
         const li = document.createElement("li");
         // Apply Tailwind classes for list items (mimicking shadcn/ui card for items)
-        li.className = "flex items-center space-x-3 p-3 rounded-md border bg-card text-card-foreground shadow-sm hover:bg-muted/50 transition-colors";
+        li.className = "flex items-center space-x-3 p-3 rounded-md border bg-card text-card-foreground shadow-sm hover:bg-muted/50 transition-colors cursor-pointer";
 
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox";
@@ -249,21 +249,40 @@ function displayNames(names) {
         li.appendChild(label);
         resultList.appendChild(li);
 
-        // Enhanced click listener for the whole LI to toggle the checkbox,
-        // but prevent if the click was directly on the checkbox itself or on a link/button inside label if any.
+        // Enhanced click listener for the whole LI to toggle the checkbox
+        // This makes the entire card clickable, not just the checkbox
         li.addEventListener('click', function(event) {
-            if (event.target !== checkbox) { // Check if the click target is not the checkbox itself
-                checkbox.checked = !checkbox.checked;
-                // Manually trigger change event for any other listeners if necessary
-                const changeEvent = new Event('change', { bubbles: true });
-                checkbox.dispatchEvent(changeEvent);
+            // Prevent the default behavior if clicking directly on the checkbox
+            // to avoid double-toggling
+            if (event.target === checkbox) {
+                return; // Let the checkbox handle its own click
             }
-            // toggleCopyAll is now called by the checkbox's change event
+            
+            // Toggle the checkbox when clicking anywhere else on the card
+            checkbox.checked = !checkbox.checked;
+            
+            // Manually trigger change event for any other listeners
+            const changeEvent = new Event('change', { bubbles: true });
+            checkbox.dispatchEvent(changeEvent);
         });
 
         // Add change event listener to checkbox to handle state of copyAllButton
         checkbox.addEventListener('change', toggleCopyAll);
     });
+
+    // Scroll to the Interview List section after displaying names
+    scrollToInterviewList();
+}
+
+// Function to smoothly scroll to the Interview List section
+function scrollToInterviewList() {
+    const interviewListSection = document.querySelector('h2');
+    if (interviewListSection && interviewListSection.textContent.includes('Interview List')) {
+        interviewListSection.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+        });
+    }
 }
 
 function toggleCopyAll() {
