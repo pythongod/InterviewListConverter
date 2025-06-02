@@ -613,7 +613,7 @@ function capitalize(str) {
 
 // displayNames is exported for testing purposes
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { capitalize, convertEmailList, displayNames };
+    module.exports = { capitalize, convertEmailList, displayNames, filterAndDisplayDecline };
 }
 
 // Example usage:
