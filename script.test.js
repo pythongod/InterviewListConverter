@@ -15,7 +15,7 @@ Object.defineProperty(window, 'matchMedia', {
 
 // Require the module normally
 const scriptModule = require('./script');
-const { capitalize, convertEmailList } = scriptModule;
+const { capitalize, convertEmailList, filterAndDisplayDecline } = scriptModule;
 
 // Mock alert
 global.alert = jest.fn();
@@ -172,5 +172,95 @@ describe('convertEmailList', () => {
     expect(mockDisplayNamesSpy).toHaveBeenCalledTimes(1);
     expect(sorted(mockDisplayNamesSpy.mock.calls[0][0])).toEqual(sorted(expectedNames));
     expect(mockDisplayNamesSpy.mock.calls[0][0].length).toBe(expectedNames.length);
+  });
+});
+
+describe('filterAndDisplayDecline', () => {
+  beforeEach(() => {
+    // Mock DOM elements needed by displayNames
+    document.body.innerHTML = '<ul id="resultList"></ul>';
+    
+    // Mock document.querySelector for scrollIntoView functionality
+    document.querySelector = jest.fn().mockReturnValue({
+      textContent: 'Interview List',
+      scrollIntoView: jest.fn()
+    });
+  });
+
+  afterEach(() => {
+    // Clean up DOM
+    document.body.innerHTML = '';
+    jest.clearAllMocks();
+  });
+
+  test('should filter names with "Abgesagt" status', () => {
+    const tsvData = 'Name\tOtherData\tStatus\nMustermann, Max\tSomeData\tZugesagt\nDoe, John\tSomeData\tAbgesagt\nSmith, Jane\tSomeData\tMit Vorbehalt';
+    
+    filterAndDisplayDecline(tsvData);
+    
+    const resultList = document.getElementById('resultList');
+    expect(resultList.children.length).toBe(1);
+    expect(resultList.innerHTML).toContain('John Doe');
+  });
+
+  test('should filter names with "Abgelehnt" status', () => {
+    const tsvData = 'Name\tOtherData\tStatus\nMustermann, Max\tSomeData\tZugesagt\nDoe, John\tSomeData\tAbgelehnt\nSmith, Jane\tSomeData\tMit Vorbehalt';
+    
+    filterAndDisplayDecline(tsvData);
+    
+    const resultList = document.getElementById('resultList');
+    expect(resultList.children.length).toBe(1);
+    expect(resultList.innerHTML).toContain('John Doe');
+  });
+
+  test('should filter names with both "Abgesagt" and "Abgelehnt" status', () => {
+    const tsvData = 'Name\tOtherData\tStatus\nMustermann, Max\tSomeData\tZugesagt\nDoe, John\tSomeData\tAbgesagt\nSmith, Jane\tSomeData\tAbgelehnt\nBrown, Bob\tSomeData\tMit Vorbehalt';
+    
+    filterAndDisplayDecline(tsvData);
+    
+    const resultList = document.getElementById('resultList');
+    expect(resultList.children.length).toBe(2);
+    expect(resultList.innerHTML).toContain('John Doe');
+    expect(resultList.innerHTML).toContain('Jane Smith');
+  });
+
+  test('should return empty list when no declined entries found', () => {
+    const tsvData = 'Name\tOtherData\tStatus\nMustermann, Max\tSomeData\tZugesagt\nSmith, Jane\tSomeData\tMit Vorbehalt';
+    
+    filterAndDisplayDecline(tsvData);
+    
+    const resultList = document.getElementById('resultList');
+    expect(resultList.children.length).toBe(0);
+  });
+
+  test('should handle names without commas', () => {
+    const tsvData = 'Name\tOtherData\tStatus\nMax Mustermann\tSomeData\tAbgesagt\nJane Smith\tSomeData\tAbgelehnt';
+    
+    filterAndDisplayDecline(tsvData);
+    
+    const resultList = document.getElementById('resultList');
+    expect(resultList.children.length).toBe(2);
+    expect(resultList.innerHTML).toContain('Max Mustermann');
+    expect(resultList.innerHTML).toContain('Jane Smith');
+  });
+
+  test('should skip empty rows and rows without names', () => {
+    const tsvData = 'Name\tOtherData\tStatus\n\t\tAbgesagt\nDoe, John\tSomeData\tAbgelehnt\n\t\tAbgesagt';
+    
+    filterAndDisplayDecline(tsvData);
+    
+    const resultList = document.getElementById('resultList');
+    expect(resultList.children.length).toBe(1);
+    expect(resultList.innerHTML).toContain('John Doe');
+  });
+
+  test('should skip rows with missing status column', () => {
+    const tsvData = 'Name\tOtherData\tStatus\nDoe, John\tSomeData\nSmith, Jane\tSomeData\tAbgelehnt';
+    
+    filterAndDisplayDecline(tsvData);
+    
+    const resultList = document.getElementById('resultList');
+    expect(resultList.children.length).toBe(1);
+    expect(resultList.innerHTML).toContain('Jane Smith');
   });
 });
