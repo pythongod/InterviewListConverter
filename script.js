@@ -405,7 +405,46 @@ function filterAndDisplayVorbehalt(data) {
 }
 
 function filterAndDisplayDecline(data) {
-    filterAndDisplayGeneric(data, 2, 'Abgesagt');
+    const rows = data.split('\n');
+    const filteredNames = [];
+
+    // Starting from index 1 to skip the header row
+    for (let i = 1; i < rows.length; i++) {
+        if (!rows[i] || rows[i].trim() === '') { // Skip empty or whitespace-only rows
+            continue;
+        }
+        const cells = rows[i].split('\t');
+
+        // Ensure cells[0] (for name) exists. If not, we can't process this row for a name.
+        if (!cells[0] || cells[0].trim() === '') { 
+            continue;
+        }
+        
+        // Ensure the cell for the status exists.
+        if (typeof cells[2] === 'undefined') { 
+            continue;
+        }
+
+        // Check for both "Abgesagt" and "Abgelehnt"
+        const status = cells[2].trim();
+        if (status === 'Abgesagt' || status === 'Abgelehnt') {
+            let name = cells[0].trim();
+            if (name.includes(",")) {
+                const splitName = name.split(",").map(n => n.trim());
+                // Ensure both parts exist after split before trying to access them
+                if (splitName.length >= 2 && splitName[0] && splitName[1]) {
+                    name = splitName[1] + " " + splitName[0]; // Flipping the name
+                } 
+                // If splitName doesn't have two valid parts, 'name' remains cells[0].trim()
+                // No specific "else" needed here as name is already trimmed from cells[0]
+            }
+            // Only push if the name is not empty after potential processing (though trim should handle most)
+            if (name) { 
+                 filteredNames.push(name);
+            }
+        }
+    }
+    displayNames(filteredNames);
 }
 
 function filterAndDisplayNoResponse(data) {
