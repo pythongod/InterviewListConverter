@@ -584,6 +584,7 @@ function convertEmailList() {
     // Split by major separators first (semicolon, newline), then process each part
     const entries = input.split(/[;\n]+/).flatMap(part => {
         // For each part, we need to carefully split by commas, being mindful of quoted sections
+        // and email patterns like "lastname, firstname email@domain"
         const entryParts = [];
         let current = '';
         let inQuotes = false;
@@ -596,10 +597,22 @@ function convertEmailList() {
                 inQuotes = !inQuotes;
                 current += char;
             } else if (char === ',' && !inQuotes) {
-                if (current.trim()) {
-                    entryParts.push(current.trim());
+                // Check if this comma is part of a "lastname, firstname email@domain" pattern
+                // Look ahead to see if there's an email after this comma
+                const remainingPart = part.substring(i + 1).trim();
+                const emailPattern = /^[^,]+\s+[^@\s]+@[^@\s]+/;
+                
+                if (emailPattern.test(remainingPart)) {
+                    // This looks like "lastname, firstname email@domain" pattern
+                    // Continue building the current entry instead of splitting
+                    current += char;
+                } else {
+                    // This is a regular comma separator
+                    if (current.trim()) {
+                        entryParts.push(current.trim());
+                    }
+                    current = '';
                 }
-                current = '';
             } else {
                 current += char;
             }
@@ -625,21 +638,29 @@ function convertEmailList() {
         if (quotedNameEmailMatch) {
             nameSource = quotedNameEmailMatch[1]; // Extract the quoted name
         } else {
-            // Check for plain email or <email> format
-            const emailMatch = trimmedEntry.match(/^<?([^<>\s]+@[^<>\s]+)>?$/);
-            if (emailMatch) {
-                const email = emailMatch[1];
-                const [username, domain] = email.split('@');
-                
-                // Special case: only include domain for "last@example.org"
-                if (email.toLowerCase() === 'last@example.org') {
-                    nameSource = `${username} example`.replace(/[._]/g, ' ');
-                } else {
-                    nameSource = username.replace(/[._]/g, ' ');
-                }
+            // Check for "lastname, firstname email@domain" format (unquoted)
+            const unquotedNameEmailMatch = trimmedEntry.match(/^([^,]+),\s*([^@]+)\s+([^@\s]+@[^@\s]+)$/);
+            if (unquotedNameEmailMatch) {
+                const lastname = unquotedNameEmailMatch[1].trim();
+                const firstname = unquotedNameEmailMatch[2].trim();
+                nameSource = `${firstname} ${lastname}`;
             } else {
-                // Treat as plain name
-                nameSource = trimmedEntry;
+                // Check for plain email or <email> format
+                const emailMatch = trimmedEntry.match(/^<?([^<>\s]+@[^<>\s]+)>?$/);
+                if (emailMatch) {
+                    const email = emailMatch[1];
+                    const [username, domain] = email.split('@');
+                    
+                    // Special case: only include domain for "last@example.org"
+                    if (email.toLowerCase() === 'last@example.org') {
+                        nameSource = `${username} example`.replace(/[._]/g, ' ');
+                    } else {
+                        nameSource = username.replace(/[._]/g, ' ');
+                    }
+                } else {
+                    // Treat as plain name
+                    nameSource = trimmedEntry;
+                }
             }
         }
         
@@ -684,6 +705,7 @@ function convertEmailList() {
                 continue; 
             }
 
+            // Only flip if it contains a comma and wasn't already processed by the unquoted pattern above
             if (nameToProcess && nameToProcess.includes(',')) { // Check nameToProcess itself
                 const parts = nameToProcess.split(',').map(p => p.trim());
                 if (parts.length >= 2 && parts[0] && parts[1]) {
