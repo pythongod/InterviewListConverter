@@ -350,6 +350,9 @@ document.addEventListener("DOMContentLoaded", function() {
         const inputData = document.getElementById("inputZugesagtData").value;
         filterAndDisplayAll(inputData);
     }); 
+    document.getElementById("copyAllSortedBtn").addEventListener("click", function() {
+        copyAllSorted();
+    }); 
 });
 
 
@@ -453,6 +456,114 @@ function filterAndDisplayNoResponse(data) {
 
 function filterAndDisplayAll(data) {
     filterAndDisplayGeneric(data, 0, '', true);
+}
+
+function copyAllSorted() {
+    const inputData = document.getElementById("inputZugesagtData").value.trim();
+    
+    if (!inputData) {
+        showCopyNotification("No TSV data to copy!");
+        return;
+    }
+
+    const rows = inputData.split('\n');
+    
+    // Initialize arrays for each status
+    const zugesagt = [];
+    const mitVorbehalt = [];
+    const abgelehnt = [];
+    const keine = [];
+    const unbekannt = []; // For any other status
+
+    // Starting from index 1 to skip the header row
+    for (let i = 1; i < rows.length; i++) {
+        if (!rows[i] || rows[i].trim() === '') { // Skip empty or whitespace-only rows
+            continue;
+        }
+        const cells = rows[i].split('\t');
+
+        // Ensure cells[0] (for name) exists. If not, we can't process this row for a name.
+        if (!cells[0] || cells[0].trim() === '') { 
+            continue;
+        }
+        
+        // Process the name (flip if comma-separated)
+        let name = cells[0].trim();
+        if (name.includes(",")) {
+            const splitName = name.split(",").map(n => n.trim());
+            // Ensure both parts exist after split before trying to access them
+            if (splitName.length >= 2 && splitName[0] && splitName[1]) {
+                name = splitName[1] + " " + splitName[0]; // Flipping the name
+            } 
+        }
+        
+        // Get status, default to 'Unbekannt' if missing
+        const status = (cells[2] && cells[2].trim()) || 'Unbekannt';
+        
+        // Sort into appropriate arrays
+        switch (status) {
+            case 'Zugesagt':
+                zugesagt.push(name);
+                break;
+            case 'Mit Vorbehalt':
+                mitVorbehalt.push(name);
+                break;
+            case 'Abgesagt':
+            case 'Abgelehnt':
+                abgelehnt.push(name);
+                break;
+            case 'Keine':
+                keine.push(name);
+                break;
+            default:
+                unbekannt.push(name);
+                break;
+        }
+    }
+
+    // Sort each array alphabetically
+    zugesagt.sort();
+    mitVorbehalt.sort();
+    abgelehnt.sort();
+    keine.sort();
+    unbekannt.sort();
+
+    // Build the formatted output
+    let output = "";
+    
+    if (zugesagt.length > 0) {
+        output += "---- Zugesagt ----\n";
+        output += zugesagt.join('\n') + '\n\n';
+    }
+    
+    if (mitVorbehalt.length > 0) {
+        output += "---- Mit Vorbehalt ----\n";
+        output += mitVorbehalt.join('\n') + '\n\n';
+    }
+    
+    if (abgelehnt.length > 0) {
+        output += "---- Abgelehnt ----\n";
+        output += abgelehnt.join('\n') + '\n\n';
+    }
+    
+    if (keine.length > 0) {
+        output += "---- Keine ----\n";
+        output += keine.join('\n') + '\n\n';
+    }
+    
+    if (unbekannt.length > 0) {
+        output += "---- Unbekannt ----\n";
+        output += unbekannt.join('\n') + '\n\n';
+    }
+
+    // Remove trailing newlines
+    output = output.trim();
+    
+    if (output) {
+        copyToClipboard(output);
+    } else {
+        showCopyNotification("No valid data found to copy!");
+    }
 }
 
 function convertEmailList() {
@@ -613,7 +724,7 @@ function capitalize(str) {
 
 // displayNames is exported for testing purposes
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { capitalize, convertEmailList, displayNames, filterAndDisplayDecline };
+    module.exports = { capitalize, convertEmailList, displayNames, filterAndDisplayDecline, copyAllSorted };
 }
 
 // Example usage:

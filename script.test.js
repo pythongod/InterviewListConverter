@@ -15,10 +15,18 @@ Object.defineProperty(window, 'matchMedia', {
 
 // Require the module normally
 const scriptModule = require('./script');
-const { capitalize, convertEmailList, filterAndDisplayDecline } = scriptModule;
+const { capitalize, convertEmailList, filterAndDisplayDecline, copyAllSorted } = scriptModule;
 
 // Mock alert
 global.alert = jest.fn();
+
+// Mock navigator.clipboard properly
+Object.defineProperty(navigator, 'clipboard', {
+  writable: true,
+  value: {
+    writeText: jest.fn(() => Promise.resolve())
+  }
+});
 
 describe('capitalize', () => {
   test('should return an empty string for an empty input', () => {
@@ -262,5 +270,106 @@ describe('filterAndDisplayDecline', () => {
     const resultList = document.getElementById('resultList');
     expect(resultList.children.length).toBe(1);
     expect(resultList.innerHTML).toContain('Jane Smith');
+  });
+});
+
+describe('copyAllSorted', () => {
+  let mockGetElementById;
+  
+  beforeEach(() => {
+    // Mock document.getElementById to return our test data and notification element
+    mockGetElementById = jest.spyOn(document, 'getElementById').mockImplementation((id) => {
+      if (id === 'inputZugesagtData') {
+        return { value: '' }; // Will be overridden in individual tests
+      }
+      if (id === 'copyNotification') {
+        return {
+          textContent: '',
+          style: { display: 'none' },
+          setAttribute: jest.fn()
+        };
+      }
+      return null;
+    });
+    
+    // Mock requestAnimationFrame
+    global.requestAnimationFrame = jest.fn(cb => cb());
+    global.setTimeout = jest.fn(cb => cb());
+  });
+
+  afterEach(() => {
+    mockGetElementById.mockRestore();
+    jest.clearAllMocks();
+  });
+
+  test('should group and sort names by status correctly', () => {
+    const tsvData = 'Name\tOtherData\tStatus\nMustermann, Max\tSomeData\tZugesagt\nSmith, Jane\tSomeData\tMit Vorbehalt\nDoe, John\tSomeData\tAbgelehnt\nBrown, Bob\tSomeData\tKeine\nAlpha, Alice\tSomeData\tZugesagt';
+    
+    mockGetElementById.mockImplementation((id) => {
+      if (id === 'inputZugesagtData') {
+        return { value: tsvData };
+      }
+      if (id === 'copyNotification') {
+        return {
+          textContent: '',
+          style: { display: 'none' },
+          setAttribute: jest.fn()
+        };
+      }
+      return null;
+    });
+    
+    // Mock navigator.clipboard for this test
+    const mockWriteText = jest.fn(() => Promise.resolve());
+    Object.defineProperty(navigator, 'clipboard', {
+      writable: true,
+      value: { writeText: mockWriteText }
+    });
+    
+    copyAllSorted();
+    
+    expect(mockWriteText).toHaveBeenCalledTimes(1);
+    
+    const copiedText = mockWriteText.mock.calls[0][0];
+    
+    // Check the structure and content
+    expect(copiedText).toContain('---- Zugesagt ----');
+    expect(copiedText).toContain('---- Mit Vorbehalt ----');
+    expect(copiedText).toContain('---- Abgelehnt ----');
+    expect(copiedText).toContain('---- Keine ----');
+    
+    // Check that names are properly formatted (flipped from "Last, First" to "First Last")
+    expect(copiedText).toContain('Alice Alpha'); // Should be sorted first in Zugesagt
+    expect(copiedText).toContain('Max Mustermann'); // Should be sorted second in Zugesagt
+    expect(copiedText).toContain('Jane Smith');
+    expect(copiedText).toContain('John Doe');
+    expect(copiedText).toContain('Bob Brown');
+  });
+
+  test('should handle empty TSV data', () => {
+    mockGetElementById.mockImplementation((id) => {
+      if (id === 'inputZugesagtData') {
+        return { value: '' };
+      }
+      if (id === 'copyNotification') {
+        return {
+          textContent: '',
+          style: { display: 'none' },
+          setAttribute: jest.fn()
+        };
+      }
+      return null;
+    });
+    
+    const mockWriteText = jest.fn(() => Promise.resolve());
+    Object.defineProperty(navigator, 'clipboard', {
+      writable: true,
+      value: { writeText: mockWriteText }
+    });
+    
+    copyAllSorted();
+    
+    // Should not call clipboard write for empty data
+    expect(mockWriteText).not.toHaveBeenCalled();
   });
 });
