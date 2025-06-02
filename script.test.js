@@ -181,6 +181,21 @@ describe('convertEmailList', () => {
     expect(sorted(mockDisplayNamesSpy.mock.calls[0][0])).toEqual(sorted(expectedNames));
     expect(mockDisplayNamesSpy.mock.calls[0][0].length).toBe(expectedNames.length);
   });
+
+  test('should process unquoted lastname, firstname email format: Pitt, Brad Brad.Pitt@usd.de;', () => {
+    mockGetElementByIdSpy.mockReturnValueOnce({ value: 'Pitt, Brad Brad.Pitt@usd.de;' });
+    convertEmailList();
+    expect(mockDisplayNamesSpy).toHaveBeenCalledTimes(1);
+    expect(mockDisplayNamesSpy.mock.calls[0][0]).toEqual(['Brad Pitt']);
+  });
+
+  test('should process multiple unquoted lastname, firstname email entries', () => {
+    mockGetElementByIdSpy.mockReturnValueOnce({ value: 'Pitt, Brad Brad.Pitt@usd.de;Knowles, Beyoncé Beyonce.Knowles@usd.de;Johnson, Dwayne Dwayne.Johnson@usd.de;' });
+    convertEmailList();
+    expect(mockDisplayNamesSpy).toHaveBeenCalledTimes(1);
+    const expected = ['Brad Pitt', 'Beyoncé Knowles', 'Dwayne Johnson'];
+    expect(sorted(mockDisplayNamesSpy.mock.calls[0][0])).toEqual(sorted(expected));
+  });
 });
 
 describe('filterAndDisplayDecline', () => {
