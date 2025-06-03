@@ -347,11 +347,11 @@ describe('copyAllSorted', () => {
     
     const copiedText = mockWriteText.mock.calls[0][0];
     
-    // Check the structure and content
-    expect(copiedText).toContain('---- Zugesagt ----');
-    expect(copiedText).toContain('---- Mit Vorbehalt ----');
-    expect(copiedText).toContain('---- Abgelehnt ----');
-    expect(copiedText).toContain('---- Keine ----');
+    // Check the structure and content with counts
+    expect(copiedText).toContain('---- Zugesagt (2) ----');
+    expect(copiedText).toContain('---- Mit Vorbehalt (1) ----');
+    expect(copiedText).toContain('---- Abgelehnt (1) ----');
+    expect(copiedText).toContain('---- Keine (1) ----');
     
     // Check that names are properly formatted (flipped from "Last, First" to "First Last")
     expect(copiedText).toContain('Alice Alpha'); // Should be sorted first in Zugesagt
