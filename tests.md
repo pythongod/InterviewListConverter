@@ -103,20 +103,22 @@ These tests verify the TSV (Tab-Separated Values) filtering functionality for de
 
 ## 4. `copyAllSorted` Function Tests
 
-These tests verify the functionality that groups and sorts all TSV entries by status category.
+These tests verify the functionality that groups and sorts all TSV entries by status category, with counts displayed in each category header.
 
 ### Sorting and Grouping Tests
 
-- **Multi-status sorting**: Tests proper categorization of entries into status groups:
-  - Zugesagt (Confirmed)
-  - Mit Vorbehalt (With reservation) 
-  - Abgelehnt (Declined)
-  - Keine (No response)
+- **Multi-status sorting**: Tests proper categorization of entries into status groups with counts:
+  - Zugesagt (2) (Confirmed)
+  - Mit Vorbehalt (1) (With reservation) 
+  - Abgelehnt (1) (Declined)
+  - Keine (1) (No response)
   - Unbekannt (Unknown)
 
 - **Alphabetical sorting**: Verifies that names within each category are sorted alphabetically
 
 - **Name formatting**: Ensures "Lastname, Firstname" entries are properly flipped to "Firstname Lastname"
+
+- **Count display**: Verifies that each category header shows the correct count of people in that category (e.g., "---- Zugesagt (2) ----")
 
 ### Edge Case Handling
 

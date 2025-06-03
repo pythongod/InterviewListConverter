@@ -532,27 +532,27 @@ function copyAllSorted() {
     let output = "";
     
     if (zugesagt.length > 0) {
-        output += "---- Zugesagt ----\n";
+        output += `---- Zugesagt (${zugesagt.length}) ----\n`;
         output += zugesagt.join('\n') + '\n\n';
     }
     
     if (mitVorbehalt.length > 0) {
-        output += "---- Mit Vorbehalt ----\n";
+        output += `---- Mit Vorbehalt (${mitVorbehalt.length}) ----\n`;
         output += mitVorbehalt.join('\n') + '\n\n';
     }
     
     if (abgelehnt.length > 0) {
-        output += "---- Abgelehnt ----\n";
+        output += `---- Abgelehnt (${abgelehnt.length}) ----\n`;
         output += abgelehnt.join('\n') + '\n\n';
     }
     
     if (keine.length > 0) {
-        output += "---- Keine ----\n";
+        output += `---- Keine (${keine.length}) ----\n`;
         output += keine.join('\n') + '\n\n';
     }
     
     if (unbekannt.length > 0) {
-        output += "---- Unbekannt ----\n";
+        output += `---- Unbekannt (${unbekannt.length}) ----\n`;
         output += unbekannt.join('\n') + '\n\n';
     }
 
