@@ -45,11 +45,15 @@ if (themeToggleButton) {
 // Original Function Definitions
 // Your copyToClipboard function should be using the Clipboard API:
 function copyToClipboard(text) {
+    if (!text) {
+        showCopyNotification("Nothing to copy!");
+        return;
+    }
     navigator.clipboard.writeText(text).then(() => {
-        showCopyNotification("Copied to clipboard!"); // Show success notification
+        showCopyNotification("Copied to clipboard!");
     }).catch(err => {
         console.error('Failed to copy text: ', err);
-        showCopyNotification("Failed to copy!"); // Show error notification
+        showCopyNotification("Failed to copy! Please check browser permissions.");
     });
 }
 
@@ -140,11 +144,21 @@ function convertTextareaToList() {
 function handleFile() {
     const fileInput = document.getElementById('csvFile');
     const file = fileInput.files[0];
+
+    if (!file) {
+        showCopyNotification("No file selected!");
+        return;
+    }
+
     const reader = new FileReader();
 
     reader.onload = function(event) {
         const csvData = event.target.result;
         parseCSVtoTextarea(csvData);
+    }
+
+    reader.onerror = function() {
+        showCopyNotification("Failed to read file!");
     }
 
     reader.readAsText(file);
