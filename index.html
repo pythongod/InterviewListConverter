@@ -31,6 +31,85 @@
         <!-- Accordion for sections -->
         <div data-accordion-group class="space-y-4">
 
+            <!-- Microsoft 365 Meetings Section -->
+            <div class="rounded-lg border bg-card text-card-foreground shadow-sm" data-accordion-item>
+                <button data-accordion-trigger class="flex w-full items-center justify-between p-4 font-medium text-left hover:bg-muted/50">
+                    <span>Microsoft 365 Meetings</span>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200"
+                      data-accordion-icon
+                    >
+                      <path d="m6 9 6 6 6-6"/>
+                    </svg>
+                </button>
+                <div data-accordion-content class="overflow-hidden p-4 border-t border-border data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down" style="display: none;">
+                    <p class="text-sm text-muted-foreground mb-3">Sign in with Microsoft, choose a calendar and date range, then import attendees from one or more meetings.</p>
+
+                    <div class="grid gap-3 md:grid-cols-2 mb-4">
+                        <div>
+                            <label for="m365ClientId" class="block text-sm font-medium mb-1">Azure App Client ID</label>
+                            <input type="text" id="m365ClientId" placeholder="Application (client) ID" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                        </div>
+                        <div>
+                            <label for="m365TenantId" class="block text-sm font-medium mb-1">Tenant ID</label>
+                            <input type="text" id="m365TenantId" placeholder="organizations" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                        </div>
+                    </div>
+
+                    <div class="rounded-md border bg-muted/30 p-3 text-sm mb-4">
+                        <div class="font-medium">Redirect URI to register in Azure</div>
+                        <div id="m365RedirectUri" class="mt-1 break-all text-muted-foreground"></div>
+                    </div>
+
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <button id="m365SignInBtn" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">Sign In With Microsoft</button>
+                        <button id="m365SignOutBtn" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">Sign Out</button>
+                        <button id="m365LoadMeetingsBtn" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-4 py-2">Load Meetings</button>
+                        <button id="m365ImportMeetingsBtn" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">Import Selected Attendees</button>
+                    </div>
+
+                    <div id="m365AuthStatus" class="text-sm text-muted-foreground mb-4">Not connected.</div>
+
+                    <div class="grid gap-3 md:grid-cols-3 mb-4">
+                        <div>
+                            <label for="m365CalendarSelect" class="block text-sm font-medium mb-1">Calendar</label>
+                            <select id="m365CalendarSelect" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                                <option value="">Sign in to load calendars</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="m365DateStart" class="block text-sm font-medium mb-1">Start Date</label>
+                            <input type="date" id="m365DateStart" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                        </div>
+                        <div>
+                            <label for="m365DateEnd" class="block text-sm font-medium mb-1">End Date</label>
+                            <input type="date" id="m365DateEnd" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="m365MeetingSearch" class="block text-sm font-medium mb-1">Filter Meetings</label>
+                        <input type="text" id="m365MeetingSearch" placeholder="Search by subject, organizer, or location" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                    </div>
+
+                    <div class="flex items-center justify-between mb-2">
+                        <div id="m365MeetingSummary" class="text-sm text-muted-foreground">No meetings loaded.</div>
+                        <button id="m365SelectVisibleBtn" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 py-2">Select Visible</button>
+                    </div>
+
+                    <ul id="m365MeetingList" class="space-y-2"></ul>
+                </div>
+            </div>
+
             <!-- Outlook Invites Section -->
             <div class="rounded-lg border bg-card text-card-foreground shadow-sm" data-accordion-item>
                 <button data-accordion-trigger class="flex w-full items-center justify-between p-4 font-medium text-left hover:bg-muted/50">
@@ -184,6 +263,7 @@ e.g., Max Mustermann <max.mustermann@example.com>; doe.john@example.com; &quot;D
     </div>
     
     <script src="script.js"></script>
+    <script src="vendor/msal-browser.min.js"></script>
     <!-- Basic Accordion Toggle Script (will be refined later) -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {

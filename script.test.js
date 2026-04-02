@@ -37,9 +37,11 @@ const {
   convertEmailList,
   copyAllSorted,
   displayNames,
+  extractAttendeeNamesFromMeetings,
   filterAndDisplayDecline,
   getStoredThemePreference,
   handleSystemThemeChange,
+  normalizeMicrosoftAttendeeName,
   persistThemePreference,
 } = scriptModule;
 
@@ -83,6 +85,46 @@ describe('theme preference', () => {
     handleSystemThemeChange();
     expect(document.documentElement.classList.contains('dark')).toBe(true);
     expect(getStoredThemePreference()).toBe('dark');
+  });
+});
+
+describe('Microsoft 365 attendee extraction', () => {
+  test('should normalize display names and skip resource attendees', () => {
+    expect(normalizeMicrosoftAttendeeName({
+      type: 'required',
+      emailAddress: { name: 'Doe, Jane', address: 'jane.doe@example.com' }
+    })).toBe('Jane Doe');
+
+    expect(normalizeMicrosoftAttendeeName({
+      type: 'resource',
+      emailAddress: { name: 'Conference Room', address: 'room@example.com' }
+    })).toBeNull();
+  });
+
+  test('should fall back to the email local-part when no attendee name exists', () => {
+    expect(normalizeMicrosoftAttendeeName({
+      type: 'optional',
+      emailAddress: { address: 'john.smith@example.com' }
+    })).toBe('John Smith');
+  });
+
+  test('should deduplicate attendee names across multiple selected meetings', () => {
+    const names = extractAttendeeNamesFromMeetings([
+      {
+        attendees: [
+          { type: 'required', emailAddress: { name: 'Doe, Jane', address: 'jane.doe@example.com' } },
+          { type: 'optional', emailAddress: { address: 'john.smith@example.com' } }
+        ]
+      },
+      {
+        attendees: [
+          { type: 'required', emailAddress: { name: 'Jane Doe', address: 'jane.doe@example.com' } },
+          { type: 'resource', emailAddress: { name: 'Room 1', address: 'room1@example.com' } }
+        ]
+      }
+    ]);
+
+    expect(names).toEqual(['Jane Doe', 'John Smith']);
   });
 });
 
