@@ -1,21 +1,47 @@
+const matchMediaListeners = [];
+const matchMediaMock = {
+  matches: false,
+  media: '(prefers-color-scheme: dark)',
+  onchange: null,
+  addListener: jest.fn((listener) => {
+    matchMediaListeners.push(listener);
+  }),
+  removeListener: jest.fn(),
+  addEventListener: jest.fn((eventName, listener) => {
+    if (eventName === 'change') {
+      matchMediaListeners.push(listener);
+    }
+  }),
+  removeEventListener: jest.fn(),
+  dispatchEvent: jest.fn((event) => {
+    if (typeof event.matches === 'boolean') {
+      matchMediaMock.matches = event.matches;
+    }
+
+    matchMediaListeners.forEach((listener) => listener(event));
+    return true;
+  }),
+};
+
 // Mock window.matchMedia for Jest environment
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: jest.fn().mockImplementation(query => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: jest.fn(), // deprecated
-    removeListener: jest.fn(), // deprecated
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn(),
-    dispatchEvent: jest.fn(),
-  })),
+  value: jest.fn().mockImplementation(() => matchMediaMock),
 });
 
 // Require the module normally
 const scriptModule = require('./script');
-const { capitalize, convertEmailList, filterAndDisplayDecline, copyAllSorted } = scriptModule;
+const {
+  applyThemePreference,
+  capitalize,
+  convertEmailList,
+  copyAllSorted,
+  displayNames,
+  filterAndDisplayDecline,
+  getStoredThemePreference,
+  handleSystemThemeChange,
+  persistThemePreference,
+} = scriptModule;
 
 // Mock alert
 global.alert = jest.fn();
@@ -26,6 +52,38 @@ Object.defineProperty(navigator, 'clipboard', {
   value: {
     writeText: jest.fn(() => Promise.resolve())
   }
+});
+
+describe('theme preference', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    delete document.documentElement.dataset.themePreference;
+    document.documentElement.classList.remove('dark');
+    matchMediaMock.matches = false;
+  });
+
+  test('should default to system preference when no override is stored', () => {
+    applyThemePreference();
+    expect(getStoredThemePreference()).toBe('system');
+    expect(document.documentElement.classList.contains('dark')).toBe(false);
+
+    matchMediaMock.matches = true;
+    handleSystemThemeChange();
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
+    expect(document.documentElement.dataset.themePreference).toBe('system');
+  });
+
+  test('should not override explicit light/dark choices when system preference changes', () => {
+    persistThemePreference('dark');
+    applyThemePreference('dark');
+
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
+
+    matchMediaMock.matches = false;
+    handleSystemThemeChange();
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
+    expect(getStoredThemePreference()).toBe('dark');
+  });
 });
 
 describe('capitalize', () => {
@@ -136,6 +194,12 @@ describe('convertEmailList', () => {
     expect(mockDisplayNamesSpy).toHaveBeenCalledWith(['John Doe']);
   });
 
+  test('should process unquoted display name email format: John Doe <john.doe@example.com>', () => {
+    mockGetElementByIdSpy.mockReturnValueOnce({ value: 'John Doe <john.doe@example.com>' });
+    convertEmailList();
+    expect(mockDisplayNamesSpy).toHaveBeenCalledWith(['John Doe']);
+  });
+
   test('should process: plainname, "Another, Person" <ap@example.com>, last@example.org', () => {
     mockGetElementByIdSpy.mockReturnValueOnce({ value: 'plainname, "Another, Person" <ap@example.com>, last@example.org' });
     convertEmailList();
@@ -195,6 +259,40 @@ describe('convertEmailList', () => {
     expect(mockDisplayNamesSpy).toHaveBeenCalledTimes(1);
     const expected = ['Brad Pitt', 'Beyoncé Knowles', 'Dwayne Johnson'];
     expect(sorted(mockDisplayNamesSpy.mock.calls[0][0])).toEqual(sorted(expected));
+  });
+});
+
+describe('displayNames', () => {
+  let querySelectorSpy;
+
+  beforeEach(() => {
+    document.body.innerHTML = '<ul id="resultList"></ul>';
+    querySelectorSpy = jest.spyOn(document, 'querySelector').mockReturnValue({
+      textContent: 'Interview List',
+      scrollIntoView: jest.fn()
+    });
+  });
+
+  afterEach(() => {
+    document.body.innerHTML = '';
+    querySelectorSpy.mockRestore();
+  });
+
+  test('should escape user-provided HTML instead of injecting DOM nodes', () => {
+    displayNames(['<img src=x onerror=alert(1)>']);
+
+    const resultList = document.getElementById('resultList');
+    expect(resultList.querySelector('img')).toBeNull();
+    expect(resultList.textContent).toContain('<img');
+  });
+
+  test('should deduplicate equivalent names after normalization and keep the richer email variant', () => {
+    displayNames(['john.doe@example.com', 'John Doe', 'Doe, John']);
+
+    const resultList = document.getElementById('resultList');
+    expect(resultList.children.length).toBe(1);
+    expect(resultList.textContent).toContain('John Doe');
+    expect(resultList.textContent).toContain('@example.com');
   });
 });
 
@@ -285,6 +383,16 @@ describe('filterAndDisplayDecline', () => {
     const resultList = document.getElementById('resultList');
     expect(resultList.children.length).toBe(1);
     expect(resultList.innerHTML).toContain('Jane Smith');
+  });
+
+  test('should handle headerless TSV input without dropping the first declined row', () => {
+    const tsvData = 'Doe, John\tSomeData\tAbgelehnt\nSmith, Jane\tSomeData\tMit Vorbehalt';
+
+    filterAndDisplayDecline(tsvData);
+
+    const resultList = document.getElementById('resultList');
+    expect(resultList.children.length).toBe(1);
+    expect(resultList.innerHTML).toContain('John Doe');
   });
 });
 
@@ -386,5 +494,37 @@ describe('copyAllSorted', () => {
     
     // Should not call clipboard write for empty data
     expect(mockWriteText).not.toHaveBeenCalled();
+  });
+
+  test('should include the first row when TSV data has no header', () => {
+    const tsvData = 'Doe, John\tSomeData\tAbgelehnt\nAlpha, Alice\tSomeData\tZugesagt';
+
+    mockGetElementById.mockImplementation((id) => {
+      if (id === 'inputZugesagtData') {
+        return { value: tsvData };
+      }
+      if (id === 'copyNotification') {
+        return {
+          textContent: '',
+          style: { display: 'none' },
+          setAttribute: jest.fn()
+        };
+      }
+      return null;
+    });
+
+    const mockWriteText = jest.fn(() => Promise.resolve());
+    Object.defineProperty(navigator, 'clipboard', {
+      writable: true,
+      value: { writeText: mockWriteText }
+    });
+
+    copyAllSorted();
+
+    const copiedText = mockWriteText.mock.calls[0][0];
+    expect(copiedText).toContain('---- Zugesagt (1) ----');
+    expect(copiedText).toContain('---- Abgelehnt (1) ----');
+    expect(copiedText).toContain('Alice Alpha');
+    expect(copiedText).toContain('John Doe');
   });
 });

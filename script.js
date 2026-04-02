@@ -2,44 +2,95 @@
 const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
 const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
 const themeToggleButton = document.getElementById('darkModeToggle');
+const systemThemeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+function getStoredThemePreference() {
+    const storedTheme = localStorage.theme;
+    return ['light', 'dark', 'system'].includes(storedTheme) ? storedTheme : 'system';
+}
+
+function getEffectiveTheme(themePreference = getStoredThemePreference()) {
+    if (themePreference === 'system') {
+        return systemThemeMediaQuery.matches ? 'dark' : 'light';
+    }
+
+    return themePreference;
+}
+
+function getNextThemePreference(themePreference = getStoredThemePreference()) {
+    if (themePreference === 'system') {
+        return 'light';
+    }
+
+    if (themePreference === 'light') {
+        return 'dark';
+    }
+
+    return 'system';
+}
+
+function persistThemePreference(themePreference) {
+    if (themePreference === 'system') {
+        localStorage.removeItem('theme');
+        return;
+    }
+
+    localStorage.theme = themePreference;
+}
+
+function applyThemePreference(themePreference = getStoredThemePreference()) {
+    const effectiveTheme = getEffectiveTheme(themePreference);
+    document.documentElement.classList.toggle('dark', effectiveTheme === 'dark');
+    document.documentElement.dataset.themePreference = themePreference;
+    updateThemeButtonIcon(themePreference, effectiveTheme);
+}
 
 // Function to update button icon based on theme
-function updateThemeButtonIcon() {
+function updateThemeButtonIcon(themePreference = getStoredThemePreference(), effectiveTheme = getEffectiveTheme(themePreference)) {
     if (!themeToggleDarkIcon || !themeToggleLightIcon) return; // Guard against missing elements
 
-    if (document.documentElement.classList.contains('dark') || localStorage.theme === 'dark') {
+    if (effectiveTheme === 'dark') {
         themeToggleLightIcon.classList.remove('hidden');
         themeToggleDarkIcon.classList.add('hidden');
     } else {
         themeToggleDarkIcon.classList.remove('hidden');
         themeToggleLightIcon.classList.add('hidden');
     }
+
+    if (themeToggleButton) {
+        const nextThemePreference = getNextThemePreference(themePreference);
+        themeToggleButton.setAttribute(
+            'aria-label',
+            `Theme: ${themePreference}. Click to switch to ${nextThemePreference}.`
+        );
+        themeToggleButton.title = `Theme: ${themePreference}. Click to switch to ${nextThemePreference}.`;
+    }
+}
+
+function handleThemeToggle() {
+    const nextThemePreference = getNextThemePreference();
+    persistThemePreference(nextThemePreference);
+    applyThemePreference(nextThemePreference);
+}
+
+function handleSystemThemeChange() {
+    if (getStoredThemePreference() === 'system') {
+        applyThemePreference('system');
+    }
 }
 
 // Apply initial theme (on page load)
-if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-    document.documentElement.classList.add('dark');
-} else {
-    document.documentElement.classList.remove('dark');
-}
-updateThemeButtonIcon(); // Set initial icon state
+applyThemePreference();
 
 // Event listener for the toggle button
 if (themeToggleButton) {
-    themeToggleButton.addEventListener('click', function() {
-        // Toggle theme class on <html>
-        document.documentElement.classList.toggle('dark');
+    themeToggleButton.addEventListener('click', handleThemeToggle);
+}
 
-        // Update localStorage
-        if (document.documentElement.classList.contains('dark')) {
-            localStorage.theme = 'dark';
-        } else {
-            localStorage.theme = 'light';
-        }
-
-        // Update button icon
-        updateThemeButtonIcon();
-    });
+if (typeof systemThemeMediaQuery.addEventListener === 'function') {
+    systemThemeMediaQuery.addEventListener('change', handleSystemThemeChange);
+} else if (typeof systemThemeMediaQuery.addListener === 'function') {
+    systemThemeMediaQuery.addListener(handleSystemThemeChange);
 }
 
 // Original Function Definitions
@@ -164,27 +215,85 @@ function handleFile() {
     reader.readAsText(file);
 }
 
+function getTSVDataRows(data) {
+    const rows = data.split('\n').filter(row => row && row.trim() !== '');
+
+    if (rows.length === 0) {
+        return [];
+    }
+
+    if (isLikelyHeaderRow(rows[0])) {
+        return rows.slice(1);
+    }
+
+    return rows;
+}
+
+function isLikelyHeaderRow(row) {
+    const cells = row.split('\t').map(cell => cell.trim().toLowerCase());
+    const firstCell = cells[0] || '';
+    const thirdCell = cells[2] || '';
+    const nameKeywords = ['name', 'participant', 'attendee', 'teilnehmer'];
+    const statusKeywords = ['status', 'response', 'antwort'];
+
+    return nameKeywords.some(keyword => firstCell.includes(keyword)) ||
+        statusKeywords.some(keyword => thirdCell.includes(keyword));
+}
+
+function normalizeDelimitedName(name) {
+    let normalizedName = name.trim();
+
+    if (normalizedName.includes(",")) {
+        const splitName = normalizedName.split(",").map(part => part.trim());
+
+        if (splitName.length >= 2 && splitName[0] && splitName[1]) {
+            normalizedName = `${splitName[1]} ${splitName[0]}`;
+        }
+    }
+
+    return normalizedName;
+}
+
+function normalizeNameEntry(name) {
+    if (!name || !name.trim()) {
+        return null;
+    }
+
+    const emailParts = name.trim().split('@');
+    let displayName = name.trim();
+    let domain = '';
+
+    if (emailParts.length > 1) {
+        displayName = emailParts[0];
+        domain = '@' + emailParts.slice(1).join('@');
+    }
+
+    displayName = normalizeDelimitedName(displayName.replace(/\./g, ' '));
+    displayName = capitalize(displayName.trim());
+
+    if (!displayName) {
+        return null;
+    }
+
+    return {
+        displayName,
+        domain
+    };
+}
+
 function parseCSVtoTextarea(data) {
     const textarea = document.getElementById('inputTextarea'); // Get textarea element first
-    const rows = data.split('\n');
+    const rows = getTSVDataRows(data);
     let names = [];
 
-    // Check if rows is empty or only contains a header.
-    // Filter out empty strings from rows before checking length for more robustness.
-    const contentRows = rows.filter(row => row.trim() !== '');
-    if (contentRows.length <= 1) {
+    if (rows.length === 0) {
         alert("CSV file is empty or contains only a header.");
         textarea.value = ""; // Clear the textarea
         return;
     }
 
-    // Starting from index 1 of the original rows array to skip the header row
-    for (let i = 1; i < rows.length; i++) {
-        // Check if rows[i] is empty, null, or undefined, or just whitespace
-        if (!rows[i] || rows[i].trim() === '') {
-            continue;
-        }
-        const cells = rows[i].split('\t');
+    for (const row of rows) {
+        const cells = row.split('\t');
 
         // Assuming names are in the first column and it's not empty/whitespace
         if (cells[0] && cells[0].trim() !== '') {
@@ -206,15 +315,31 @@ function displayNames(names) {
     const resultList = document.getElementById("resultList");
     resultList.innerHTML = "";
 
-    // Remove duplicates and empty names, then sort by email domain
-    names = [...new Set(names.filter(name => name.trim() !== ''))]
-        .sort((a, b) => {
-            const domainA = a.split('@')[1] || ''; // Handle cases where name might not have @
-            const domainB = b.split('@')[1] || ''; // Handle cases where name might not have @
-            return domainA.localeCompare(domainB);
+    const normalizedNames = new Map();
+
+    names
+        .map(normalizeNameEntry)
+        .filter(Boolean)
+        .forEach((entry) => {
+            const entryKey = entry.displayName.toLowerCase();
+            const existingEntry = normalizedNames.get(entryKey);
+
+            if (!existingEntry || (!existingEntry.domain && entry.domain)) {
+                normalizedNames.set(entryKey, entry);
+            }
         });
 
-    names.forEach((name, index) => {
+    const deduplicatedNames = Array.from(normalizedNames.values())
+        .sort((a, b) => {
+            const domainComparison = a.domain.localeCompare(b.domain);
+            if (domainComparison !== 0) {
+                return domainComparison;
+            }
+
+            return a.displayName.localeCompare(b.displayName);
+        });
+
+    deduplicatedNames.forEach((entry, index) => {
         const li = document.createElement("li");
         // Apply Tailwind classes for list items (mimicking shadcn/ui card for items)
         li.className = "flex items-center space-x-3 p-3 rounded-md border bg-card text-card-foreground shadow-sm hover:bg-muted/50 transition-colors cursor-pointer";
@@ -230,34 +355,18 @@ function displayNames(names) {
         // Apply Tailwind classes for the name display
         nameDisplay.className = "text-sm font-medium leading-none cursor-pointer flex-grow";
 
-        // Extract email domain (if present)
-        const emailParts = name.split('@');
-        let displayName = name;
-        let domain = '';
-
-        if (emailParts.length > 1) {
-            displayName = emailParts[0];
-            domain = '@' + emailParts[1];
-        }
-        
-        // Remove any email address and dots from the name
-        displayName = displayName.replace(/\./g, ' ');
-
-        // Flip last and first names if there's a comma
-        if (displayName.includes(",")) {
-            let [lastName, firstName] = displayName.split(",").map(n => n.trim());
-            if (firstName && lastName) { // Ensure both parts exist
-                displayName = `${firstName} ${lastName}`;
-            } else if (lastName) { // Only lastName exists (e.g. "Doe,")
-                displayName = lastName;
-            } // if only firstName, it's already correct
-        }
-
         // Store the name without domain in the dataset for copying
-        nameDisplay.dataset.name = capitalize(displayName.trim()); // Capitalize before storing
+        nameDisplay.dataset.name = entry.displayName;
 
-        // Display name with domain in UI
-        nameDisplay.innerHTML = `${capitalize(displayName.trim())} <span class="text-xs text-muted-foreground">${domain}</span>`; // Styled domain span
+        nameDisplay.appendChild(document.createTextNode(entry.displayName));
+
+        if (entry.domain) {
+            nameDisplay.appendChild(document.createTextNode(' '));
+            const domainSpan = document.createElement('span');
+            domainSpan.className = "text-xs text-muted-foreground";
+            domainSpan.textContent = entry.domain;
+            nameDisplay.appendChild(domainSpan);
+        }
 
         li.appendChild(checkbox);
         li.appendChild(nameDisplay);
@@ -372,15 +481,11 @@ document.addEventListener("DOMContentLoaded", function() {
 
 // Generic filter function
 function filterAndDisplayGeneric(data, columnIndex, expectedValue, matchAll = false) {
-    const rows = data.split('\n');
+    const rows = getTSVDataRows(data);
     const filteredNames = []; // Use a generic name
 
-    // Starting from index 1 to skip the header row
-    for (let i = 1; i < rows.length; i++) {
-        if (!rows[i] || rows[i].trim() === '') { // Skip empty or whitespace-only rows
-            continue;
-        }
-        const cells = rows[i].split('\t');
+    for (const row of rows) {
+        const cells = row.split('\t');
 
         // Ensure cells[0] (for name) exists. If not, we can't process this row for a name.
         if (!cells[0] || cells[0].trim() === '') { 
@@ -393,16 +498,8 @@ function filterAndDisplayGeneric(data, columnIndex, expectedValue, matchAll = fa
         }
 
         if (matchAll || (cells[columnIndex] && cells[columnIndex].trim() === expectedValue)) {
-            let name = cells[0].trim();
-            if (name.includes(",")) {
-                const splitName = name.split(",").map(n => n.trim());
-                // Ensure both parts exist after split before trying to access them
-                if (splitName.length >= 2 && splitName[0] && splitName[1]) {
-                    name = splitName[1] + " " + splitName[0]; // Flipping the name
-                } 
-                // If splitName doesn't have two valid parts, 'name' remains cells[0].trim()
-                // No specific "else" needed here as name is already trimmed from cells[0]
-            }
+            const name = normalizeDelimitedName(cells[0]);
+
             // Only push if the name is not empty after potential processing (though trim should handle most)
             if (name) { 
                  filteredNames.push(name);
@@ -422,15 +519,11 @@ function filterAndDisplayVorbehalt(data) {
 }
 
 function filterAndDisplayDecline(data) {
-    const rows = data.split('\n');
+    const rows = getTSVDataRows(data);
     const filteredNames = [];
 
-    // Starting from index 1 to skip the header row
-    for (let i = 1; i < rows.length; i++) {
-        if (!rows[i] || rows[i].trim() === '') { // Skip empty or whitespace-only rows
-            continue;
-        }
-        const cells = rows[i].split('\t');
+    for (const row of rows) {
+        const cells = row.split('\t');
 
         // Ensure cells[0] (for name) exists. If not, we can't process this row for a name.
         if (!cells[0] || cells[0].trim() === '') { 
@@ -445,16 +538,8 @@ function filterAndDisplayDecline(data) {
         // Check for both "Abgesagt" and "Abgelehnt"
         const status = cells[2].trim();
         if (status === 'Abgesagt' || status === 'Abgelehnt') {
-            let name = cells[0].trim();
-            if (name.includes(",")) {
-                const splitName = name.split(",").map(n => n.trim());
-                // Ensure both parts exist after split before trying to access them
-                if (splitName.length >= 2 && splitName[0] && splitName[1]) {
-                    name = splitName[1] + " " + splitName[0]; // Flipping the name
-                } 
-                // If splitName doesn't have two valid parts, 'name' remains cells[0].trim()
-                // No specific "else" needed here as name is already trimmed from cells[0]
-            }
+            const name = normalizeDelimitedName(cells[0]);
+
             // Only push if the name is not empty after potential processing (though trim should handle most)
             if (name) { 
                  filteredNames.push(name);
@@ -480,7 +565,7 @@ function copyAllSorted() {
         return;
     }
 
-    const rows = inputData.split('\n');
+    const rows = getTSVDataRows(inputData);
     
     // Initialize arrays for each status
     const zugesagt = [];
@@ -489,12 +574,8 @@ function copyAllSorted() {
     const keine = [];
     const unbekannt = []; // For any other status
 
-    // Starting from index 1 to skip the header row
-    for (let i = 1; i < rows.length; i++) {
-        if (!rows[i] || rows[i].trim() === '') { // Skip empty or whitespace-only rows
-            continue;
-        }
-        const cells = rows[i].split('\t');
+    for (const row of rows) {
+        const cells = row.split('\t');
 
         // Ensure cells[0] (for name) exists. If not, we can't process this row for a name.
         if (!cells[0] || cells[0].trim() === '') { 
@@ -502,14 +583,7 @@ function copyAllSorted() {
         }
         
         // Process the name (flip if comma-separated)
-        let name = cells[0].trim();
-        if (name.includes(",")) {
-            const splitName = name.split(",").map(n => n.trim());
-            // Ensure both parts exist after split before trying to access them
-            if (splitName.length >= 2 && splitName[0] && splitName[1]) {
-                name = splitName[1] + " " + splitName[0]; // Flipping the name
-            } 
-        }
+        const name = normalizeDelimitedName(cells[0]);
         
         // Get status, default to 'Unbekannt' if missing
         const status = (cells[2] && cells[2].trim()) || 'Unbekannt';
@@ -652,28 +726,33 @@ function convertEmailList() {
         if (quotedNameEmailMatch) {
             nameSource = quotedNameEmailMatch[1]; // Extract the quoted name
         } else {
-            // Check for "lastname, firstname email@domain" format (unquoted)
-            const unquotedNameEmailMatch = trimmedEntry.match(/^([^,]+),\s*([^@]+)\s+([^@\s]+@[^@\s]+)$/);
-            if (unquotedNameEmailMatch) {
-                const lastname = unquotedNameEmailMatch[1].trim();
-                const firstname = unquotedNameEmailMatch[2].trim();
-                nameSource = `${firstname} ${lastname}`;
+            const displayNameEmailMatch = trimmedEntry.match(/^([^<>"]+?)\s*<([^>]*)>$/);
+            if (displayNameEmailMatch) {
+                nameSource = displayNameEmailMatch[1].trim();
             } else {
-                // Check for plain email or <email> format
-                const emailMatch = trimmedEntry.match(/^<?([^<>\s]+@[^<>\s]+)>?$/);
-                if (emailMatch) {
-                    const email = emailMatch[1];
-                    const [username, domain] = email.split('@');
-                    
-                    // Special case: only include domain for "last@example.org"
-                    if (email.toLowerCase() === 'last@example.org') {
-                        nameSource = `${username} example`.replace(/[._]/g, ' ');
-                    } else {
-                        nameSource = username.replace(/[._]/g, ' ');
-                    }
+            // Check for "lastname, firstname email@domain" format (unquoted)
+                const unquotedNameEmailMatch = trimmedEntry.match(/^([^,]+),\s*([^@]+)\s+([^@\s]+@[^@\s]+)$/);
+                if (unquotedNameEmailMatch) {
+                    const lastname = unquotedNameEmailMatch[1].trim();
+                    const firstname = unquotedNameEmailMatch[2].trim();
+                    nameSource = `${firstname} ${lastname}`;
                 } else {
-                    // Treat as plain name
-                    nameSource = trimmedEntry;
+                    // Check for plain email or <email> format
+                    const emailMatch = trimmedEntry.match(/^<?([^<>\s]+@[^<>\s]+)>?$/);
+                    if (emailMatch) {
+                        const email = emailMatch[1];
+                        const [username, domain] = email.split('@');
+                        
+                        // Special case: only include domain for "last@example.org"
+                        if (email.toLowerCase() === 'last@example.org') {
+                            nameSource = `${username} example`.replace(/[._]/g, ' ');
+                        } else {
+                            nameSource = username.replace(/[._]/g, ' ');
+                        }
+                    } else {
+                        // Treat as plain name
+                        nameSource = trimmedEntry;
+                    }
                 }
             }
         }
@@ -760,7 +839,19 @@ function capitalize(str) {
 
 // displayNames is exported for testing purposes
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { capitalize, convertEmailList, displayNames, filterAndDisplayDecline, copyAllSorted };
+    module.exports = {
+        applyThemePreference,
+        capitalize,
+        convertEmailList,
+        copyAllSorted,
+        displayNames,
+        filterAndDisplayDecline,
+        getEffectiveTheme,
+        getNextThemePreference,
+        getStoredThemePreference,
+        handleSystemThemeChange,
+        persistThemePreference
+    };
 }
 
 // Example usage:
