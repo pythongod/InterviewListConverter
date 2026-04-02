@@ -7,6 +7,41 @@ https://interviewlist.netlify.app/ 📝
 
 A web application to parse and format lists of names from Outlook invites, MS Teams attendance lists, and to filter participants from TSV data based on their response status. All processing is done client-side in your browser.
 
+## Microsoft 365 Meetings
+
+The app can now sign in to Microsoft 365, list your calendars, load meetings for a date range, and import attendee names from selected meetings.
+
+### Setup
+
+1. Create an Azure app registration in Microsoft Entra ID.
+2. Add a SPA redirect URI that matches the app URL exactly.
+   * For local testing this is usually `http://localhost:.../`
+   * For Netlify this should match your deployed URL, for example `https://interviewlist.netlify.app/`
+3. Add delegated Microsoft Graph permissions:
+   * `User.Read`
+   * `Calendars.Read`
+4. If your tenant requires it, grant admin consent for those permissions.
+5. Open the **Microsoft 365 Meetings** section in the app and enter:
+   * Azure App Client ID
+   * Tenant ID
+6. Sign in, choose a calendar and date range, then import attendees from selected meetings.
+
+### How It Works
+
+The integration uses:
+* Microsoft identity platform SPA auth with MSAL Browser
+* Microsoft Graph `/me/calendars`
+* Microsoft Graph calendar view queries for meetings in a date range
+
+Useful docs:
+* https://learn.microsoft.com/en-us/entra/msal/javascript/browser/about-msal-browser
+* https://learn.microsoft.com/en-us/graph/api/user-list-calendars?view=graph-rest-1.0
+* https://learn.microsoft.com/en-us/graph/api/user-list-calendarview?view=graph-rest-1.0
+
+### Outlook Add-in Alternative
+
+If you want this embedded inside Outlook instead of as a standalone website, see [docs/outlook-addin-approach.md](docs/outlook-addin-approach.md).
+
 ## Input Methods      
 
 ### Outlook Invites
