@@ -13,18 +13,23 @@ The app can now sign in to Microsoft 365, list your calendars, load meetings for
 
 ### Setup
 
-1. Create an Azure app registration in Microsoft Entra ID.
-2. Add a SPA redirect URI that matches the app URL exactly.
+1. Go to `https://entra.microsoft.com/`
+2. Open `Microsoft Entra ID` -> `App registrations` -> `New registration`
+3. Create an app registration for this tool.
+4. Under `Redirect URI`, choose `Single-page application (SPA)` and add a redirect URI that matches the app URL exactly.
    * For local testing this is usually `http://localhost:.../`
    * For Netlify this should match your deployed URL, for example `https://interviewlist.netlify.app/`
-3. Add delegated Microsoft Graph permissions:
+5. After registration, open the app's `Overview` page and copy:
+   * `Application (client) ID` -> paste into the app's `Azure App Client ID`
+   * `Directory (tenant) ID` -> paste into the app's `Tenant ID`
+6. Add delegated Microsoft Graph permissions:
    * `User.Read`
    * `Calendars.Read`
-4. If your tenant requires it, grant admin consent for those permissions.
-5. Open the **Microsoft 365 Meetings** section in the app and enter:
+7. If your tenant requires it, grant admin consent for those permissions.
+8. Open the **Microsoft 365 Meetings** section in the app and enter:
    * Azure App Client ID
    * Tenant ID
-6. Sign in, choose a calendar and date range, then import attendees from selected meetings.
+9. Sign in, choose a calendar and date range, then import attendees from selected meetings.
 
 ### How It Works
 
