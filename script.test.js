@@ -39,10 +39,13 @@ const {
   displayNames,
   extractAttendeeNamesFromMeetings,
   filterAndDisplayDecline,
+  getNextMicrosoftGraphUrl,
   getStoredThemePreference,
   handleSystemThemeChange,
   normalizeMicrosoftAttendeeName,
+  normalizeStatusValue,
   persistThemePreference,
+  statusMatches,
 } = scriptModule;
 
 // Mock alert
@@ -85,6 +88,17 @@ describe('theme preference', () => {
     handleSystemThemeChange();
     expect(document.documentElement.classList.contains('dark')).toBe(true);
     expect(getStoredThemePreference()).toBe('dark');
+  });
+});
+
+describe('Microsoft Graph paging', () => {
+  test('should convert absolute Graph nextLink values into relative API paths', () => {
+    const payload = {
+      '@odata.nextLink': 'https://graph.microsoft.com/v1.0/me/calendarView?$skiptoken=abc'
+    };
+
+    expect(getNextMicrosoftGraphUrl(payload)).toBe('/me/calendarView?$skiptoken=abc');
+    expect(getNextMicrosoftGraphUrl({})).toBeNull();
   });
 });
 
@@ -246,7 +260,7 @@ describe('convertEmailList', () => {
     mockGetElementByIdSpy.mockReturnValueOnce({ value: 'plainname, "Another, Person" <ap@example.com>, last@example.org' });
     convertEmailList();
     expect(mockDisplayNamesSpy).toHaveBeenCalledTimes(1);
-    const expected = ["Plainname", "Person Another", "Last Example"];
+    const expected = ["Plainname", "Person Another", "Last"];
     expect(sorted(mockDisplayNamesSpy.mock.calls[0][0])).toEqual(sorted(expected));
     expect(mockDisplayNamesSpy.mock.calls[0][0].length).toBe(expected.length);
   });
@@ -335,6 +349,30 @@ describe('displayNames', () => {
     expect(resultList.children.length).toBe(1);
     expect(resultList.textContent).toContain('John Doe');
     expect(resultList.textContent).toContain('@example.com');
+  });
+
+  test('should reset copy button states after rendering a new unselected list', () => {
+    document.body.innerHTML = `
+      <ul id="resultList"></ul>
+      <button id="copyAllButton" disabled>Copy All</button>
+      <button onclick="copySelected()">Copy Selected</button>
+    `;
+    const copySelectedButton = document.body.querySelector("button[onclick='copySelected()']");
+    querySelectorSpy.mockImplementation((selector) => {
+      if (selector === "button[onclick='copySelected()']") {
+        return copySelectedButton;
+      }
+
+      return {
+        textContent: 'Interview List',
+        scrollIntoView: jest.fn()
+      };
+    });
+
+    displayNames(['Jane Doe']);
+
+    expect(document.getElementById('copyAllButton').hasAttribute('disabled')).toBe(false);
+    expect(document.body.querySelector("button[onclick='copySelected()']").hasAttribute('disabled')).toBe(true);
   });
 });
 
@@ -435,6 +473,31 @@ describe('filterAndDisplayDecline', () => {
     const resultList = document.getElementById('resultList');
     expect(resultList.children.length).toBe(1);
     expect(resultList.innerHTML).toContain('John Doe');
+  });
+});
+
+describe('status normalization', () => {
+  test('should normalize casing and whitespace for status comparisons', () => {
+    expect(normalizeStatusValue('  Mit   Vorbehalt  ')).toBe('mit vorbehalt');
+    expect(statusMatches(' abgesagt ', 'Abgesagt')).toBe(true);
+    expect(statusMatches('ZUGESAGT', 'Zugesagt')).toBe(true);
+  });
+
+  test('decline filtering should handle case and whitespace variants', () => {
+    document.body.innerHTML = '<ul id="resultList"></ul><button id="copyAllButton"></button><button onclick="copySelected()"></button>';
+    document.querySelector = jest.fn().mockReturnValue({
+      textContent: 'Interview List',
+      scrollIntoView: jest.fn()
+    });
+
+    const tsvData = 'Name\tOtherData\tStatus\nDoe, John\tSomeData\t abgelehnt \nSmith, Jane\tSomeData\tABGESAGT';
+
+    filterAndDisplayDecline(tsvData);
+
+    const resultList = document.getElementById('resultList');
+    expect(resultList.children.length).toBe(2);
+    expect(resultList.innerHTML).toContain('John Doe');
+    expect(resultList.innerHTML).toContain('Jane Smith');
   });
 });
 

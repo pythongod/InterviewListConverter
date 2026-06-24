@@ -385,10 +385,36 @@ async function microsoftGraphGet(url) {
     return response.json();
 }
 
+async function microsoftGraphGetAllPages(url) {
+    const collectedValues = [];
+    let nextUrl = url;
+
+    while (nextUrl) {
+        const payload = await microsoftGraphGet(nextUrl);
+        collectedValues.push(...(payload.value || []));
+        nextUrl = getNextMicrosoftGraphUrl(payload);
+    }
+
+    return collectedValues;
+}
+
+function getNextMicrosoftGraphUrl(payload) {
+    const nextLink = payload && payload['@odata.nextLink'];
+
+    if (!nextLink) {
+        return null;
+    }
+
+    const graphBaseUrl = 'https://graph.microsoft.com/v1.0';
+    return nextLink.startsWith(graphBaseUrl)
+        ? nextLink.slice(graphBaseUrl.length)
+        : nextLink;
+}
+
 async function loadMicrosoftCalendars() {
     try {
-        const payload = await microsoftGraphGet('/me/calendars?$select=id,name,isDefaultCalendar&$top=50');
-        microsoftCalendars = (payload.value || []).sort((left, right) => {
+        const calendars = await microsoftGraphGetAllPages('/me/calendars?$select=id,name,isDefaultCalendar&$top=50');
+        microsoftCalendars = calendars.sort((left, right) => {
             if (left.isDefaultCalendar && !right.isDefaultCalendar) {
                 return -1;
             }
@@ -454,9 +480,7 @@ async function loadMicrosoftMeetings() {
         const { startDateTime, endDateTime } = getMicrosoftMeetingDateRange();
         updateMicrosoftStatus('Loading meetings...');
         const query = `/me/calendars/${encodeURIComponent(calendarId)}/calendarView?$select=id,subject,start,end,location,organizer,attendees,webLink&$orderby=start/dateTime&startDateTime=${encodeURIComponent(startDateTime)}&endDateTime=${encodeURIComponent(endDateTime)}`;
-        const payload = await microsoftGraphGet(query);
-
-        microsoftMeetings = payload.value || [];
+        microsoftMeetings = await microsoftGraphGetAllPages(query);
         selectedMicrosoftMeetingIds = new Set();
         renderMicrosoftMeetings();
         updateMicrosoftStatus(`Loaded ${microsoftMeetings.length} meetings from Microsoft 365.`);
@@ -696,6 +720,11 @@ function initializeMicrosoft365UI() {
         m365SelectVisibleButton.addEventListener('click', selectVisibleMicrosoftMeetings);
     }
 
+    if (!getMicrosoftGraphConfigFromInputs().clientId) {
+        updateMicrosoftStatus('Enter your Azure App Client ID and Tenant ID to enable Microsoft 365 meeting import.');
+        return;
+    }
+
     ensureMicrosoftClientApp()
         .then(async (clientApp) => {
             const account = clientApp.getActiveAccount() || clientApp.getAllAccounts()[0] || null;
@@ -708,8 +737,8 @@ function initializeMicrosoft365UI() {
             updateMicrosoftStatus(`Connected as ${account.username}.`);
             await loadMicrosoftCalendars();
         })
-        .catch(() => {
-            updateMicrosoftStatus('Enter your Azure App Client ID and Tenant ID to enable Microsoft 365 meeting import.');
+        .catch((error) => {
+            updateMicrosoftStatus(error.message || 'Failed to initialize Microsoft 365 meeting import.', true);
         });
 }
 
@@ -1013,6 +1042,8 @@ function displayNames(names) {
         checkbox.addEventListener('change', toggleCopyAll);
     });
 
+    toggleCopyAll();
+
     // Scroll to the Interview List section after displaying names
     scrollToInterviewList();
 }
@@ -1044,13 +1075,17 @@ function toggleCopyAll() {
     // Disable "Copy All" if any checkbox is selected, enable "Copy Selected"
     // Enable "Copy All" if no checkbox is selected, disable "Copy Selected"
     if (anyCheckboxChecked) {
-        copyAllButton.setAttribute("disabled", "true");
-        if (copySelectedButton) {
+        if (copyAllButton) {
+            copyAllButton.setAttribute("disabled", "true");
+        }
+        if (copySelectedButton && typeof copySelectedButton.removeAttribute === 'function') {
             copySelectedButton.removeAttribute("disabled");
         }
     } else {
-        copyAllButton.removeAttribute("disabled");
-        if (copySelectedButton) {
+        if (copyAllButton) {
+            copyAllButton.removeAttribute("disabled");
+        }
+        if (copySelectedButton && typeof copySelectedButton.setAttribute === 'function') {
             copySelectedButton.setAttribute("disabled", "true");
         }
     }
@@ -1101,6 +1136,14 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 
+function normalizeStatusValue(status) {
+    return (status || '').trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+function statusMatches(status, expectedValue) {
+    return normalizeStatusValue(status) === normalizeStatusValue(expectedValue);
+}
+
 // Generic filter function
 function filterAndDisplayGeneric(data, columnIndex, expectedValue, matchAll = false) {
     const rows = getTSVDataRows(data);
@@ -1119,7 +1162,7 @@ function filterAndDisplayGeneric(data, columnIndex, expectedValue, matchAll = fa
             continue;
         }
 
-        if (matchAll || (cells[columnIndex] && cells[columnIndex].trim() === expectedValue)) {
+        if (matchAll || statusMatches(cells[columnIndex], expectedValue)) {
             const name = normalizeDelimitedName(cells[0]);
 
             // Only push if the name is not empty after potential processing (though trim should handle most)
@@ -1158,8 +1201,8 @@ function filterAndDisplayDecline(data) {
         }
 
         // Check for both "Abgesagt" and "Abgelehnt"
-        const status = cells[2].trim();
-        if (status === 'Abgesagt' || status === 'Abgelehnt') {
+        const status = cells[2];
+        if (statusMatches(status, 'Abgesagt') || statusMatches(status, 'Abgelehnt')) {
             const name = normalizeDelimitedName(cells[0]);
 
             // Only push if the name is not empty after potential processing (though trim should handle most)
@@ -1208,21 +1251,21 @@ function copyAllSorted() {
         const name = normalizeDelimitedName(cells[0]);
         
         // Get status, default to 'Unbekannt' if missing
-        const status = (cells[2] && cells[2].trim()) || 'Unbekannt';
+        const status = normalizeStatusValue(cells[2]) || 'unbekannt';
         
         // Sort into appropriate arrays
         switch (status) {
-            case 'Zugesagt':
+            case 'zugesagt':
                 zugesagt.push(name);
                 break;
-            case 'Mit Vorbehalt':
+            case 'mit vorbehalt':
                 mitVorbehalt.push(name);
                 break;
-            case 'Abgesagt':
-            case 'Abgelehnt':
+            case 'abgesagt':
+            case 'abgelehnt':
                 abgelehnt.push(name);
                 break;
-            case 'Keine':
+            case 'keine':
                 keine.push(name);
                 break;
             default:
@@ -1363,14 +1406,8 @@ function convertEmailList() {
                     const emailMatch = trimmedEntry.match(/^<?([^<>\s]+@[^<>\s]+)>?$/);
                     if (emailMatch) {
                         const email = emailMatch[1];
-                        const [username, domain] = email.split('@');
-                        
-                        // Special case: only include domain for "last@example.org"
-                        if (email.toLowerCase() === 'last@example.org') {
-                            nameSource = `${username} example`.replace(/[._]/g, ' ');
-                        } else {
-                            nameSource = username.replace(/[._]/g, ' ');
-                        }
+                        const [username] = email.split('@');
+                        nameSource = username.replace(/[._]/g, ' ');
                     } else {
                         // Treat as plain name
                         nameSource = trimmedEntry;
@@ -1470,11 +1507,14 @@ if (typeof module !== 'undefined' && module.exports) {
         extractAttendeeNamesFromMeetings,
         filterAndDisplayDecline,
         getEffectiveTheme,
+        getNextMicrosoftGraphUrl,
         getNextThemePreference,
         getStoredThemePreference,
         handleSystemThemeChange,
         normalizeMicrosoftAttendeeName,
-        persistThemePreference
+        normalizeStatusValue,
+        persistThemePreference,
+        statusMatches
     };
 }
 
